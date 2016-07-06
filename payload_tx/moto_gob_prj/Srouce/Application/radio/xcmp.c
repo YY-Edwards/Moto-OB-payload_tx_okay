@@ -838,8 +838,8 @@ void xcmp_enter_device_control_mode(void)
 	
 	ptr->Function = DCM_ENTER;
 	ptr->ControlTypeSize = 1;
-	//ptr->ControlType = 0x03;// 0xEB;//user-input
-	ptr->ControlType = DCM_SPEAKER_CTRL;
+	ptr->ControlType = 0x03;// 0xEB;//user-input
+	//ptr->ControlType = DCM_SPEAKER_CTRL;
 	
 	/*send xcmp frame*/
 	xcmp_tx( &xcmp_farme, sizeof(DeviceControlMode_req_t));

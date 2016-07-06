@@ -177,7 +177,7 @@ void spk_reply_func(xcmp_fragment_t * xcmp)
 		
 		if(xcmp->u8[4])
 		{
-			//is_unmute = 1;
+			is_unmute = 1;
 			
 			//Silent_flag = 1;
 		}
@@ -203,7 +203,7 @@ void spk_brdcst_func(xcmp_fragment_t * xcmp)
 	else
 	{
 		Silent_flag = 1;
-		is_unmute = 1;
+		//is_unmute = 1;
 		log("spk_s_open ");
 	}
 	
@@ -765,8 +765,8 @@ static __app_Thread_(app_cfg)
 					//xcmp_data_session();
 					//xcmp_audio_route_mic();
 					//xcmp_button_config();
-					xcmp_audio_route_speaker();
-					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
+					//xcmp_audio_route_speaker();
+					xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					
 					//is_unmute = 1;
@@ -780,7 +780,7 @@ static __app_Thread_(app_cfg)
 					//xcmp_data_session();
 				   // xcmp_transmit_control();
 					//xcmp_volume_control();
-					//xcmp_enter_enhanced_OB_mode();
+					xcmp_enter_enhanced_OB_mode();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
 					//xcmp_unmute_speaker();
@@ -794,7 +794,7 @@ static __app_Thread_(app_cfg)
 					
 					//xcmp_volume_control();
 					//xcmp_data_session();
-					//xcmp_audio_route_AMBE();
+					xcmp_audio_route_AMBE();
 					//xcmp_audio_route_speaker();
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
@@ -888,7 +888,7 @@ static __app_Thread_(app_cfg)
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			
-				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
+				log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);
 				
@@ -901,7 +901,7 @@ static __app_Thread_(app_cfg)
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
-					//xcmp_exit_device_control_mode();
+					xcmp_exit_device_control_mode();
 					//log("\n\r time: %d \n\r", tc_tick);   
 					
 				}
@@ -948,7 +948,7 @@ static void app_payload_rx_proc(void  * payload)
 	log("\n\r w: \n\r");
 	if (AMBE_flag)
 	{
-		//fl_write("AMBEvo.bit", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+		fl_write("AMBEvo.bit", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
 	}
 	else
 	{
