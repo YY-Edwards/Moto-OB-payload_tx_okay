@@ -965,14 +965,18 @@ static void app_payload_tx_proc(void  * payload)
 {
   log("R");
   
-  //fl_write("voice.dat", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  if (AMBE_flag)
+  {
+	  fl_read("AMBEvo.bit", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  }
+  else
+  {
+	  fl_read("PCMvo.pcm", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  }
   
-  //vTaskDelay(100);
   
-  //payload_fragment_t * ptr = (payload_fragment_t *)payload;
   set_payload_idle(payload);
 
-//
 
 }
 

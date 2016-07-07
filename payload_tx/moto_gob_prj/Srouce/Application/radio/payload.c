@@ -24,6 +24,34 @@ History:
 void ( *payload_rx_exec)(void * ) = NULL;
 void ( *payload_tx_exec)(void * ) = NULL;
 
+/**
+Function: payload_tx_process
+Parameters: void *
+Description: Transmit the payload
+Calls:
+Called By:task
+*/
+static void payload_tx_process(void * pvParameters)
+{
+	/*To store the elements in the queue*/
+	U16  * payload_ptr;
+	
+	if(NULL == phy_payload_frame_tx)
+	{
+		phy_payload_frame_tx = xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
+	}
+	
+	for(;;)
+	{
+		if(pdTRUE == xQueueReceive( phy_payload_frame_tx, &payload_ptr,portMAX_DELAY ))
+		{
+			payload_tx_exec(payload_ptr);//app_payload_tx_proc();
+		}
+
+	}
+}
+
+
 
 /**
 Function: payload_rx_process
@@ -79,45 +107,15 @@ void payload_init(void ( *payload_rx_func)(void * ), void ( *payload_tx_func)(vo
 	);
 	
 	/*this task is used to transmit  payload message*/
-	//xTaskCreate(
-	//payload_tx_process
-	//,  (const signed portCHAR *)"PAYLOAD_TX"
-	//,  1024
-	//,  NULL
-	//,  2
-	//,  NULL
-	//);	
-	//
-	
-	
+	xTaskCreate(
+	payload_tx_process
+	,  (const signed portCHAR *)"PAYLOAD_TX"
+	,  1024
+	,  NULL
+	,  2
+	,  NULL
+	);
 	
 	
 }
 
-
-/**
-Function: payload_tx_process
-Parameters: void *
-Description: Transmit the payload
-Calls:
-Called By:task
-*/
-static void payload_tx_process(void * pvParameters)
-{
-	/*To store the elements in the queue*/
-	U16  * payload_ptr;
-	
-	if(NULL == phy_payload_frame_tx)
-	{
-		phy_payload_frame_tx = xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
-	}
-	
-	for(;;)
-	{
-		if(pdTRUE == xQueueReceive( phy_payload_frame_tx, &payload_ptr,portMAX_DELAY ))
-		{
-			payload_tx_exec(payload_ptr);
-		}
-
-	}
-}

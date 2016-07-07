@@ -223,6 +223,88 @@ fs_err_t fl_write_func(void * path, S32 offset, void * buffer, U32 length)
 }
 
 
+
+fs_err_t fl_read_func(void * path, S32 offset, void * buffer, U32 length)
+{
+	if(f_mount(&fs, "/", 1) != FR_OK)
+		{
+			return amount_err;
+		}
+	
+		FRESULT res	= f_open (&fl, path, FA_READ | FA_OPEN_EXISTING);
+		if(FR_NO_PATH == res)
+		{
+			if ( f_opendir(&dirs, "/") != FR_OK)
+			{
+				f_mount(NULL, "/", 1);
+				return fs_err;
+			}
+		
+			static char filename[MAX_PATH_LENGTH], path_bk[MAX_PATH_LENGTH];		
+			memcpy(path_bk, path, strlen(path));
+				
+			char * dir = strtok(path_bk,"/");
+			sprintf(filename,"//%s", dir);		
+			dir = strtok(NULL,"/");
+			while(TRUE)
+			{
+				if(NULL != dir)
+				{				
+					res = f_mkdir(filename);
+					if((res == FR_OK) || (res == FR_EXIST))
+					{					
+						sprintf(filename,"%s//%s", filename, dir);
+						dir = strtok(NULL,"/");					
+					}
+					else
+					{
+						f_mount(NULL, "/", 1);	
+						return new_dir_err;
+					}
+				
+				}
+				else
+				{
+					res	= f_open (&fl, path, FA_READ | FA_OPEN_EXISTING);
+					if(res != FR_OK)
+					{					
+						f_mount(NULL, "/", 1);	
+						return open_fl_err;
+					}
+					break;
+				}
+			}
+		}
+		else if(res != FR_OK)
+		{
+			f_mount(NULL, "/", 1);
+			return open_fl_err;
+		}
+	
+		if(offset == FILE_END)
+		{
+			f_lseek(&fl, fl.fsize);
+		}
+		else
+		{
+			f_lseek(&fl, offset);
+		}
+	
+		UINT w;
+		f_read (&fl, buffer, length, &w );
+
+		f_close (&fl);
+		
+		f_mount(NULL, "/", 1);		
+	
+	
+	
+	
+	
+}
+
+
+
 static void fl_oper_process(void * pvParameters)
 {
 	fl_oper_t * fl_oper = pvPortMalloc(sizeof(fl_oper_t));
@@ -248,6 +330,25 @@ static void fl_oper_process(void * pvParameters)
 					vPortFree(fl_oper->payload);					
 				}
 				break;
+				
+			case FL_READ:
+			
+				if(NULL != fl_oper->payload)
+				{
+					if(NULL != ((fl_read_t *)(fl_oper->payload))->buffer)
+					{
+						fl_read_func(((fl_read_t *)(fl_oper->payload))->path
+						, ((fl_read_t *)(fl_oper->payload))->offset
+						, ((fl_read_t *)(fl_oper->payload))->buffer
+						, ((fl_read_t *)(fl_oper->payload))->length);
+						
+						vPortFree(((fl_read_t *)(fl_oper->payload))->buffer);
+					}
+					vPortFree(fl_oper->payload);
+				}
+				break;
+			
+			   
 								
 			default:
 				if(NULL != fl_oper->payload)
@@ -283,10 +384,38 @@ void fl_write(void * path, S32 offset, void * buffer, U32 length)
 	{
 		vPortFree(fl_write_ptr->buffer);
 		vPortFree(fl_write_ptr);
-		log("\n\r fsmm \n\r");//man...提升SPI_PBA时钟的频率可以有效的提升写文件的速度。
+		log("\n\r Wmm \n\r");//man...提升SPI_PBA时钟的频率可以有效的提升写文件的速度。
 	}
 	
 }
+
+void fl_read(void * path, S32 offset, void * buffer, U32 length)
+{
+	
+	fl_read_t * fl_read_ptr = pvPortMalloc(sizeof(fl_read_t));
+	
+	sprintf(fl_read_ptr->path, "%s", path);
+	fl_read_ptr->offset = offset;
+	fl_read_ptr->length = length;
+	
+	fl_read_ptr->buffer = pvPortMalloc(length);
+	memcpy(fl_read_ptr->buffer, buffer, length);
+	
+	fl_oper_t fl_oper;
+	
+	fl_oper.opcode = FL_READ;
+	fl_oper.payload = fl_read_ptr;
+	
+	if(pdTRUE != xQueueSend( fl_oper_queue, &fl_oper, 0 ))
+	{
+		vPortFree(fl_read_ptr->buffer);
+		vPortFree(fl_read_ptr);
+		log("\n\r Rmm \n\r");//man...提升SPI_PBA时钟的频率可以有效的提升写文件的速度。
+	}
+	
+}
+
+
 
 fs_err_t fs_init(void)
 {

@@ -73,6 +73,15 @@ typedef struct
 	U8 * buffer;
 }fl_write_t;
 
+typedef struct
+{
+	char path[MAX_PATH_LENGTH];
+	U32 offset;
+	U32 length;
+	U8 * buffer;
+}fl_read_t;
+
+
 typedef struct  
 {
 	U16 opcode;
@@ -187,5 +196,6 @@ APP_RES fs_closeVoiceFile(void);
 //APP_RES fs_DeleteVoiceFile(DeleteType_t, DateTime_t *);
 
 void fl_write(void * path, S32 offset, void * buffer, U32 length);
+void fl_read(void * path, S32 offset, void * buffer, U32 length);
 
 #endif /* MYFILE_H_ */
