@@ -1284,11 +1284,14 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	static RxMediaStates RxMediaState = WAITINGABAB;
 	static U32  RxMedia_IsFillingNext16 = 0;
+	static U32  RxAMBE_IsFillingNext8 = 0;
 	
 	static U32 RxBytesWaiting = 0;
 	static U32 ArrayDiscLength = 0;
 	
 	static U16 * payload_ptr = NULL;
+	static U8 * AMBE_payload_ptr = NULL;//考虑替换!!!
+	
 	static Bool is_first = FALSE;
 	volatile static U8 Item_ID = 0;
 	
@@ -1296,11 +1299,15 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	
 	static U8 _flag = 1;//0xABCDC014时，_flag为0；
 						//0xABCDC010时，_flag为1；
+			
+	//payload_ptr_t *AMBE_payload_ptr;		
+				
 	
 	
 	if(is_first == FALSE)
 	{
 		payload_ptr = get_payload_idle_isr();
+		AMBE_payload_ptr = get_payload_idle_isr();
 		is_first = TRUE;
 	}	
 	
@@ -1363,14 +1370,17 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			
 			RxBytesWaiting = payload_rx_channel->dword[0] & 0x000000FF;
 		
-			if(NULL== payload_ptr)
+			if((NULL== payload_ptr) || (NULL== AMBE_payload_ptr))
 			{
 				payload_ptr = get_payload_idle_isr();
-				if(NULL== payload_ptr)
+				AMBE_payload_ptr = get_payload_idle_isr();
+				
+				if((NULL== payload_ptr) || (NULL== AMBE_payload_ptr))
 				{
 					break;
 				}
 			}
+			
 		
 			/****Note AMBE stream protocol frame structure and the PCM frame structure is different*****/
 					
@@ -1380,7 +1390,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 								
 				Item_ID = payload_rx_channel->byte[5];
 				
-				VF_SN = payload_rx_channel->byte[7];//This parameter is very important to the loopback Radio, as a reference.
+				VF_SN = payload_rx_channel->byte[7];//This parameter is very important to the loop back Radio, as a reference.
 					
 				//The OB know the Call begin and discard the Voice Header
 				//The OB know the Call end and discard the Voice  Terminator			
@@ -1402,9 +1412,9 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						//AMBE-data and PCM-data is not the same. AMBE is compressed data,
 						//if there was a missing portion, a clear voice is difficult to extract the data. 
 						//It must ensure that all the data received AMBE.
-						RxMedia_IsFillingNext16 = 0;
-						payload_rx(payload_ptr);//注意！！！考虑是否需要把剩余的空间置0。
-						payload_ptr = get_payload_idle_isr();
+						RxAMBE_IsFillingNext8 = 0;
+						payload_rx(AMBE_payload_ptr);//注意！！！考虑是否需要把剩余的空间置0。
+						AMBE_payload_ptr = get_payload_idle_isr();
 						//logFromISR("\n\r QQ1 \n\r");
 						
 					}
@@ -1652,60 +1662,179 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							AMBEBurst_rawdata[2] = payload_rx_channel->word[3];
 							
 							//To be tested. Also locally stored RAW-AMBER-DATA
-							payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[1];
-							RxMedia_IsFillingNext16 += 1;
 							
-							if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							//bytes保存，明天来测试。。。
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[2];//1
+							RxAMBE_IsFillingNext8 += 1;
+							
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
 							{
-								RxMedia_IsFillingNext16 = 0;
-								payload_rx(payload_ptr);
-								payload_ptr = get_payload_idle_isr();
-								if(NULL == payload_ptr)
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
 								{
 									RxMediaState = WAITINGABAB;
 									break;
 								}
 							}
-							if ((RxBytesWaiting -= 2) <= 0){
+							if ((RxBytesWaiting -= 1) <= 0){
 								RxMediaState = WAITINGABAB;
 								break;
-							}
+							}			
 							
-							payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[2];
-							RxMedia_IsFillingNext16 += 1;
-							if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[3];//2
+							RxAMBE_IsFillingNext8 += 1;
+							
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
 							{
-								RxMedia_IsFillingNext16 = 0;
-								payload_rx(payload_ptr);
-								payload_ptr = get_payload_idle_isr();
-								if(NULL == payload_ptr)
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
 								{
 									RxMediaState = WAITINGABAB;
 									break;
 								}
 							}
-							if ((RxBytesWaiting -= 2) <= 0){
+							if ((RxBytesWaiting -= 1) <= 0){
 								RxMediaState = WAITINGABAB;
 								break;
-							}
+							}		
+						
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[4];//3
+							RxAMBE_IsFillingNext8 += 1;
 							
-							payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
-							RxMedia_IsFillingNext16 += 1;
-							if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
 							{
-								RxMedia_IsFillingNext16 = 0;
-								payload_rx(payload_ptr);
-								payload_ptr = get_payload_idle_isr();
-								if(NULL == payload_ptr)
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
 								{
 									RxMediaState = WAITINGABAB;
 									break;
 								}
 							}
-							if ((RxBytesWaiting -= 2) <= 0){
+							if ((RxBytesWaiting -= 1) <= 0){
 								RxMediaState = WAITINGABAB;
 								break;
 							}
+							
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[5];//4
+							RxAMBE_IsFillingNext8 += 1;
+							
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+							{
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
+								{
+									RxMediaState = WAITINGABAB;
+									break;
+								}
+							}
+							if ((RxBytesWaiting -= 1) <= 0){
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+							
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[6];//5
+							RxAMBE_IsFillingNext8 += 1;
+							
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+							{
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
+								{
+									RxMediaState = WAITINGABAB;
+									break;
+								}
+							}
+							if ((RxBytesWaiting -= 1) <= 0){
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+							
+							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[7];//6
+							RxAMBE_IsFillingNext8 += 1;
+							
+							if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+							{
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								if(NULL == AMBE_payload_ptr)
+								{
+									RxMediaState = WAITINGABAB;
+									break;
+								}
+							}
+							if ((RxBytesWaiting -= 1) <= 0){
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+							
+							
+							
+							//payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[1];
+							//RxMedia_IsFillingNext16 += 1;
+							
+							//if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							//{
+								//RxMedia_IsFillingNext16 = 0;
+								//payload_rx(payload_ptr);
+								//payload_ptr = get_payload_idle_isr();
+								//if(NULL == payload_ptr)
+								//{
+									//RxMediaState = WAITINGABAB;
+									//break;
+								//}
+							//}
+							//if ((RxBytesWaiting -= 2) <= 0){
+								//RxMediaState = WAITINGABAB;
+								//break;
+							//}
+							
+							//payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[2];
+							//RxMedia_IsFillingNext16 += 1;
+							//if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							//{
+								//RxMedia_IsFillingNext16 = 0;
+								//payload_rx(payload_ptr);
+								//payload_ptr = get_payload_idle_isr();
+								//if(NULL == payload_ptr)
+								//{
+									//RxMediaState = WAITINGABAB;
+									//break;
+								//}
+							//}
+							//if ((RxBytesWaiting -= 2) <= 0){
+								//RxMediaState = WAITINGABAB;
+								//break;
+							//}
+							//
+							//payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
+							//RxMedia_IsFillingNext16 += 1;
+							//if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+							//{
+								//RxMedia_IsFillingNext16 = 0;
+								//payload_rx(payload_ptr);
+								//payload_ptr = get_payload_idle_isr();
+								//if(NULL == payload_ptr)
+								//{
+									//RxMediaState = WAITINGABAB;
+									//break;
+								//}
+							//}
+							//if ((RxBytesWaiting -= 2) <= 0){
+								//RxMediaState = WAITINGABAB;
+								//break;
+							//}
 							
 						}
 						else//error
@@ -1716,32 +1845,63 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					}
 					else if (Item_ID == Post_Voice_Encoder_Data)//(bit48~Pad-bits)
 					{
+						
+						
 						AMBEBurst_rawdata[3] = payload_rx_channel->word[0];//(bit48~Pad-bits)
 						//AMBE_Per_Burst_Flag = 1;
 						
-						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[0];
-						RxMedia_IsFillingNext16 += 1;
-						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+						//根据MOTO.bit文件数据分布，建议测试pad-bits的最后一个字节不保存。
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[0];//7
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
 						{
-							RxMedia_IsFillingNext16 = 0;
-							payload_rx(payload_ptr);
-							payload_ptr = get_payload_idle_isr();
-							
-							if(NULL == payload_ptr){
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
 								RxMediaState = WAITINGABAB;
 								break;
 							}
 						}
-				
-						if ((RxBytesWaiting -= 2) <= 0)
-						{
+						if ((RxBytesWaiting -= 1) <= 0){
 							RxMediaState = WAITINGABAB;
 							break;
-						}
+						}	
 						
+						if ((RxBytesWaiting -= 1) <= 0){//此处丢弃AMBE Vocoder Bits Stream(bit59~63),不予保存
+							RxMediaState = WAITINGABAB;
+							break;
+						}	
+						
+						
+						
+						//payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[0];
+						//RxMedia_IsFillingNext16 += 1;
+						//if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
+						//{
+							//RxMedia_IsFillingNext16 = 0;
+							//payload_rx(payload_ptr);
+							//payload_ptr = get_payload_idle_isr();
+							//
+							//if(NULL == payload_ptr){
+								//RxMediaState = WAITINGABAB;
+								//break;
+							//}
+						//}
+				//
+						//if ((RxBytesWaiting -= 2) <= 0)
+						//{
+							//RxMediaState = WAITINGABAB;
+							//break;
+						//}
+						//
 						/******************************
-						*******************/
+						*******************
 						//(49bits)This shouldn't happen, but must check.
+						
 						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[1];
 						RxMedia_IsFillingNext16 += 1;
 						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
@@ -1796,7 +1956,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							break;
 						}
 						
-					/******************************
+					******************************
 						*******************/
 						
 								
