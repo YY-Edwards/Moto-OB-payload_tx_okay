@@ -293,7 +293,7 @@ fs_err_t fs_init(void)
 	fs_err_t res = disk_init();
 	if( fs_ok ==  res)
 	{
-		fl_oper_queue = xQueueCreate(50, sizeof(fl_oper_t)); //50*512bytes = 25k
+		fl_oper_queue = xQueueCreate(20, sizeof(fl_oper_t)); //20*512bytes = 10k
 		
 		/*create a task for files operation*/
 		xTaskCreate(

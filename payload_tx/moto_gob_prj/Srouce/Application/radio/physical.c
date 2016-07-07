@@ -1290,7 +1290,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	static U32 ArrayDiscLength = 0;
 	
 	static U16 * payload_ptr = NULL;
-	static U8 * AMBE_payload_ptr = NULL;//考虑替换!!!
+	static U8 * AMBE_payload_ptr = NULL;
 	
 	static Bool is_first = FALSE;
 	volatile static U8 Item_ID = 0;
@@ -1412,8 +1412,12 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						//AMBE-data and PCM-data is not the same. AMBE is compressed data,
 						//if there was a missing portion, a clear voice is difficult to extract the data. 
 						//It must ensure that all the data received AMBE.
+						
+						//注意！！！考虑是否需要把剩余的空间置0。
+						memset((AMBE_payload_ptr+ (RxAMBE_IsFillingNext8 +1)), 0x00, (512-(RxAMBE_IsFillingNext8 + 1)));
+						
 						RxAMBE_IsFillingNext8 = 0;
-						payload_rx(AMBE_payload_ptr);//注意！！！考虑是否需要把剩余的空间置0。
+						payload_rx(AMBE_payload_ptr);
 						AMBE_payload_ptr = get_payload_idle_isr();
 						//logFromISR("\n\r QQ1 \n\r");
 						
@@ -1486,7 +1490,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				
 				Item_ID = 0;//To make sure your save PCM data.
 				
-				if ((payload_rx_channel->dword[0]  & 0x00000F00) <= 1){  //Frag type must process Array Discriptor.
+				if ((payload_rx_channel->dword[0]  & 0x00000F00) <= 1){  //Flag type must process Array Descriptor.
 				//The first word of the media access payload must be the Array descriptor length. And the
 				//unit of the length is in word (16-bit). The length field itself does not count into the length.
 				//When there is no array descriptor, the length must be set to zero.[9.1.4.1]
@@ -1663,7 +1667,6 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							
 							//To be tested. Also locally stored RAW-AMBER-DATA
 							
-							//bytes保存，明天来测试。。。
 							AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[2];//1
 							RxAMBE_IsFillingNext8 += 1;
 							

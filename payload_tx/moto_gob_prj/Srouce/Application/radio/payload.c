@@ -92,7 +92,6 @@ void payload_init(void ( *payload_rx_func)(void * ), void ( *payload_tx_func)(vo
 	
 	
 	
-	
 }
 
 
