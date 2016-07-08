@@ -80,6 +80,8 @@ C_SRCS +=  \
 ../Srouce/Application/fs/mal_sd.c \
 ../Srouce/Application/fs/fs.c \
 ../Srouce/Application/radio/ambe.c \
+../Srouce/Application/radio/AMBE_audio.c \
+../Srouce/Application/radio/AMBE_audio_2.c \
 ../Srouce/Application/radio/payload.c \
 ../Srouce/Application/radio/audio.c \
 ../Srouce/Application/radio/physical.c \
@@ -127,6 +129,8 @@ Srouce/Application/fs/avr_spi_sd.o \
 Srouce/Application/fs/mal_sd.o \
 Srouce/Application/fs/fs.o \
 Srouce/Application/radio/ambe.o \
+Srouce/Application/radio/AMBE_audio.o \
+Srouce/Application/radio/AMBE_audio_2.o \
 Srouce/Application/radio/payload.o \
 Srouce/Application/radio/audio.o \
 Srouce/Application/radio/physical.o \
@@ -167,6 +171,8 @@ Srouce/Application/fs/avr_spi_sd.o \
 Srouce/Application/fs/mal_sd.o \
 Srouce/Application/fs/fs.o \
 Srouce/Application/radio/ambe.o \
+Srouce/Application/radio/AMBE_audio.o \
+Srouce/Application/radio/AMBE_audio_2.o \
 Srouce/Application/radio/payload.o \
 Srouce/Application/radio/audio.o \
 Srouce/Application/radio/physical.o \
@@ -207,6 +213,8 @@ Srouce/Application/fs/avr_spi_sd.d \
 Srouce/Application/fs/mal_sd.d \
 Srouce/Application/fs/fs.d \
 Srouce/Application/radio/ambe.d \
+Srouce/Application/radio/AMBE_audio.d \
+Srouce/Application/radio/AMBE_audio_2.d \
 Srouce/Application/radio/payload.d \
 Srouce/Application/radio/audio.d \
 Srouce/Application/radio/physical.d \
@@ -247,6 +255,8 @@ Srouce/Application/fs/avr_spi_sd.d \
 Srouce/Application/fs/mal_sd.d \
 Srouce/Application/fs/fs.d \
 Srouce/Application/radio/ambe.d \
+Srouce/Application/radio/AMBE_audio.d \
+Srouce/Application/radio/AMBE_audio_2.d \
 Srouce/Application/radio/payload.d \
 Srouce/Application/radio/audio.d \
 Srouce/Application/radio/physical.d \
@@ -296,6 +306,10 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
+
+
 
 
 

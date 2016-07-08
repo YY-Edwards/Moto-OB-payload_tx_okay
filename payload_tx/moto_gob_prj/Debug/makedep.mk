@@ -12,6 +12,10 @@ Srouce\Application\fs\fs.c
 
 Srouce\Application\radio\ambe.c
 
+Srouce\Application\radio\AMBE_audio.c
+
+Srouce\Application\radio\AMBE_audio_2.c
+
 Srouce\Application\radio\payload.c
 
 Srouce\Application\radio\audio.c
