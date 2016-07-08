@@ -32,6 +32,8 @@ unsigned long ulIdleCycleCount = 0UL;
 static void app_payload_rx_proc(void  * payload);
 static void app_payload_tx_proc(void  * payload);
 
+extern void payload_tx(void * payload);
+
 //app func--list
 
 void DeviceInitializationStatus_brdcst_func(xcmp_fragment_t  * xcmp)
@@ -740,11 +742,31 @@ static __app_Thread_(app_cfg)
 	static  portTickType xLastWakeTime;
 	const portTickType xFrequency = 4000;//2s,定时问题已经修正。2s x  2000hz = 4000
 	U8 Burst_ID = 0;
+	U8 i = 0 ;
+	
+	static U8 * AMBE_payload_ptr = NULL;
+	
+	static U8 is_first = FALSE;
 	
 	 xLastWakeTime = xTaskGetTickCount();
+	 AMBE_payload_ptr = get_payload_idle_isr();
 		
 	for(;;)
 	{
+		
+		if((NULL== AMBE_payload_ptr))
+		{
+			
+			AMBE_payload_ptr = get_payload_idle_isr();
+			
+			if((NULL== AMBE_payload_ptr))
+			{
+				break;
+			}
+		}
+	 //AMBE_payload_ptr = get_payload_idle_isr();//获取新的空地址
+		
+		
 		//if((++coun) % 200 ==0)
 		if (0x00000003 == (bunchofrandomstatusflags & 0x00000003))//确认连接成功了，再发送请求
 		{	
@@ -902,9 +924,32 @@ static __app_Thread_(app_cfg)
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
 					xcmp_exit_device_control_mode();
-					//log("\n\r time: %d \n\r", tc_tick);   
+					//log("\n\r time: %d \n\r", tc_tick); 
+			
 					
 				}
+				
+				if (isAudioRouting > 6)
+				{
+					 if (is_first == FALSE)
+					 {
+						 
+						 payload_tx(AMBE_payload_ptr);//读数据到此地址
+						 is_first = TRUE;
+						 
+					 }
+					 if (i>512)
+					 {
+						 i = 0;		 
+					 }
+					 log("\n\r AMBE_payload_ptr[%d] = %x", i, AMBE_payload_ptr[i]);
+					 i++;
+					 
+					 
+					 //payload_tx(AMBE_payload_ptr);//读数据到此地址
+					 //AMBE_payload_ptr = get_payload_idle_isr();//获取新的空地址
+				}
+				
 				//if(is_unmute == 2)
 				//{
 					//
@@ -965,14 +1010,14 @@ static void app_payload_tx_proc(void  * payload)
 {
   log("R");
   
-  if (AMBE_flag)
+  //if (AMBE_flag)
   {
 	  fl_read("AMBEvo.bit", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
   }
-  else
-  {
-	  fl_read("PCMvo.pcm", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
-  }
+  //else
+  //{
+	  //fl_read("PCMvo.pcm", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  //}
   
   
   set_payload_idle(payload);

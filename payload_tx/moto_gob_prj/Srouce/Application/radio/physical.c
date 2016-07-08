@@ -104,10 +104,10 @@ void phy_init( void )
 		
 	/*initialize the queue to send/receive xnl packet */
 	phy_payload_frame_tx =
-	xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t));
+	xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t * ));
 		
-	//phy_payload_frame_rx =
-	//xQueueCreate(RX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
+	phy_payload_frame_rx =
+	xQueueCreate(RX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
 	#endif /*end if*/
 	
 }
@@ -142,24 +142,24 @@ void phy_tx(phy_fragment_t * phy)
 		}
 	}
 	
-	/*if enable send/receive payload(media), defined in physical.h*/
-	#if ENABLE == PAYLOAD_ENABLE		
-	else if((SPEAKER_DATA == (phy_ctrl & 0xF000))
-	    || (MIC_DATA  == (phy_ctrl & 0xF000))
-	    || (PAYLOAD_DATA_RX == (phy_ctrl & 0xF000))
-	    || (PAYLOAD_DATA_TX == (phy_ctrl & 0xF000))
-	)
-	{		
-		if(NULL == phy_payload_frame_tx)
-		{
-		}
-	}	
-	#endif /*end if*/
-	
-	if(res != TRUE)
-	{
-		//vPortFree(phy_ptr);
-	}
+	///*if enable send/receive payload(media), defined in physical.h*/
+	//#if ENABLE == PAYLOAD_ENABLE		
+	//else if((SPEAKER_DATA == (phy_ctrl & 0xF000))
+	    //|| (MIC_DATA  == (phy_ctrl & 0xF000))
+	    //|| (PAYLOAD_DATA_RX == (phy_ctrl & 0xF000))
+	    //|| (PAYLOAD_DATA_TX == (phy_ctrl & 0xF000))
+	//)
+	//{		
+		//if(NULL == phy_payload_frame_tx)
+		//{
+		//}
+	//}	
+	//#endif /*end if*/
+	//
+	//if(res != TRUE)
+	//{
+		////vPortFree(phy_ptr);
+	//}
 }
 
 /**
@@ -248,7 +248,6 @@ static void phy_tx_func( void * ssc)
 	((ssc_fragment_t * )ssc)->payload_channel.dword[1] = PAYLOADIDLE1;
 	#endif /*end if*/
 }
-
 
 static void payload_rx(void * payload);
 /**
@@ -1260,31 +1259,39 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 }
 
 
-static void payload_tx(void * payload)
+
+ void payload_tx(void * payload)
 {
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	
+	//set_payload_idle(payload);
 	if(NULL == phy_payload_frame_tx)
 	{
 		phy_payload_frame_tx = xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
 	}
 
-	if(errQUEUE_FULL == xQueueSendFromISR(phy_payload_frame_tx, &payload, &xHigherPriorityTaskWoken))
-	{
+	if(errQUEUE_FULL == xQueueSendFromISR(phy_payload_frame_tx, &payload, &xHigherPriorityTaskWoken))//把数据从SD卡中读到指定的内存地址中来
+	{	//To payload_Tx_process();
+		
 		set_payload_idle_isr(payload);
-		//logFromISR("mm");
+		logFromISR("txmm");
 	}
 	else
 	{
-		//set_payload_idle_isr(payload);
-		//logFromISR("ss");
+		
+		if (xHigherPriorityTaskWoken == pdTRUE)
+		{
+			//taskYIELD();
+			
+		}
+
 	}
 }
 
 
 
 
-static void payload_rx(void * payload)
+void payload_rx(void * payload)
 {
     portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 	
@@ -1294,7 +1301,7 @@ static void payload_rx(void * payload)
 		phy_payload_frame_rx = xQueueCreate(RX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));		
 	}
 
-	if(errQUEUE_FULL == xQueueSendFromISR(phy_payload_frame_rx, &payload, &xHigherPriorityTaskWoken))
+	if(errQUEUE_FULL == xQueueSendFromISR(phy_payload_frame_rx, &payload, &xHigherPriorityTaskWoken))//注意，此处发出去的是指针的地址，即存放数组的首地址
 	//if(errQUEUE_FULL == xQueueSend(phy_payload_frame_rx, &payload, 0))
 	{	//To payload_rx_process();	
 		
