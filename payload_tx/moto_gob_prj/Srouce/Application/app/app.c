@@ -744,27 +744,28 @@ static __app_Thread_(app_cfg)
 	U8 Burst_ID = 0;
 	U8 i = 0 ;
 	
-	static U8 * AMBE_payload_ptr = NULL;
+	static U8 * AMBE_payload_ptr_Rx = NULL;
 	
 	static U8 is_first = FALSE;
 	
 	 xLastWakeTime = xTaskGetTickCount();
-	 AMBE_payload_ptr = get_payload_idle_isr();
+	 AMBE_payload_ptr_Rx = get_payload_idle_isr();
 		
 	for(;;)
 	{
 		
-		if((NULL== AMBE_payload_ptr))
+		if((NULL== AMBE_payload_ptr_Rx))
 		{
 			
-			AMBE_payload_ptr = get_payload_idle_isr();
+			AMBE_payload_ptr_Rx = get_payload_idle_isr();
 			
-			if((NULL== AMBE_payload_ptr))
+			if((NULL== AMBE_payload_ptr_Rx))
 			{
+				log("Portuguesa-1");
 				break;
 			}
 		}
-	 //AMBE_payload_ptr = get_payload_idle_isr();//获取新的空地址
+	 //AMBE_payload_ptr_Rx = get_payload_idle_isr();//获取新的空地址
 		
 		
 		//if((++coun) % 200 ==0)
@@ -910,7 +911,7 @@ static __app_Thread_(app_cfg)
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			
-				log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
+				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);
 				
@@ -934,7 +935,7 @@ static __app_Thread_(app_cfg)
 					 if (is_first == FALSE)
 					 {
 						 
-						 payload_tx(AMBE_payload_ptr);//读数据到此地址
+						 payload_tx(AMBE_payload_ptr_Rx);//读数据到此地址
 						 is_first = TRUE;
 						 
 					 }
@@ -942,12 +943,12 @@ static __app_Thread_(app_cfg)
 					 {
 						 i = 0;		 
 					 }
-					 log("\n\r AMBE_payload_ptr[%d] = %x", i, AMBE_payload_ptr[i]);
+					 log("\n\r AMBE_payload_ptr_Rx[%d] = %x", i, AMBE_payload_ptr_Rx[i]);
 					 i++;
 					 
 					 
-					 //payload_tx(AMBE_payload_ptr);//读数据到此地址
-					 //AMBE_payload_ptr = get_payload_idle_isr();//获取新的空地址
+					 //payload_tx(AMBE_payload_ptr_Rx);//读数据到此地址
+					 //AMBE_payload_ptr_Rx = get_payload_idle_isr();//获取新的空地址
 				}
 				
 				//if(is_unmute == 2)
