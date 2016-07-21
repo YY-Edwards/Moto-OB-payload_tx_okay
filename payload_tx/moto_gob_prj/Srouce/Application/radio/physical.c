@@ -594,7 +594,8 @@ extern U16 Public_AMBEkey[];
 extern U8 is_unmute;
 extern U8 Silent_flag;
 extern U8 Terminator_Flag;
-extern U8 AMBE_flag;
+extern U8 AMBE_rx_flag;
+extern U8 AMBE_tx_flag;
 extern U8 VF_SN ;
 extern U8 Burst_ID;
 
@@ -612,6 +613,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 {
 	static U32 counter = 0;
 	// 0:idle;1:header; 2:send, 3:end frame
+	static AMBEPayloadTxStates AMBEpayload_tx_state = AMBE_IDLE;
+	
 	static U8 payload_tx_state = 0;
 	static U8 frame_number = 0; // 10frame;
 	static S16 expexted_length = 0;
@@ -626,14 +629,14 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 	//static U16 pay[256];
 	
 	//Send-AMBE-data
-	if (AMBE_flag)
+	if ((AMBE_tx_flag == TRUE) || (AMBE_rx_flag == TRUE))
 	{
 		A_index = (A_index >=1456) ? 0 : A_index;
 
 	  //AMBE_flag
-		switch(payload_tx_state)
+		switch(AMBEpayload_tx_state)
 		{
-			case 0:
+			case AMBE_IDLE:
 		
 				if ((m_RxBurstType == VOICE_WATING) || (m_RxBurstType == VOICETERMINATOR)  || (m_RxBurstType == VOICEHEADER))
 				{
@@ -647,21 +650,41 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					payload_tx_channel->dword[0] = AMBE_HT[0];
 					payload_tx_channel->dword[1] = AMBE_HT[1];
 				}
-				else
+				else//加密和解密的激励类型
 				{
-					payload_tx_state = 1;
 					
-					//0xABCDCOOE
-					payload_tx_channel->dword[0] = EN_OB_PAYLOAD;//49bits
-					//0x8212
-					payload_tx_channel->word[2] = VBSP_data[0];
-					//0xF00x
-					payload_tx_channel->word[3] = VBSP_data[1];
+					//Radio Internal Parameter + Vocoder Bits Stream Parameter + 1st 20ms AMBE bits of Voice Burst A 
+					//assemble 3 items into 1 Command. Send it to Radio.
+					if (m_RxBurstType == RADIOINTERNAL)//解密数据
+					{
+						//0xABCDCO14
+						payload_tx_channel->dword[0] = DE_OB_PAYLOAD;//49bits
+						//0x847F
+						payload_tx_channel->word[2] = RIP_PAYLOAD;
+						//0xxxxx
+						payload_tx_channel->word[3] = Radio_Internal_Data[0];
+						
+						AMBEpayload_tx_state = AMBE_DE_FIRST;
+					}
+					
+					else
+					{
+	
+						//0xABCDCOOE
+						payload_tx_channel->dword[0] = EN_OB_PAYLOAD;//49bits
+						//0x8212
+						payload_tx_channel->word[2] = VBSP_data[0];
+						//0xF00x
+						payload_tx_channel->word[3] = VBSP_data[1];
+						
+						AMBEpayload_tx_state = AMBE_EN_FIRST;
+					}
 
 				}
 				break;
 			
-			case 1:
+			case AMBE_EN_FIRST:
+			
 			
 				//0x88F2
 				payload_tx_channel->word[0] = ENCODER_PAYLOAD;//49bits
@@ -675,7 +698,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				payload_tx_channel->word[3] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
 				A_index+=2;
 				
-				payload_tx_state = 2;
+				AMBEpayload_tx_state = AMBE_EN_LAST;
 				
 			/***
 				switch (m_RxBurstType)//在发送函数中去做加密处理
@@ -749,7 +772,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 		
 				break;
 			
-			case 2:
+			case AMBE_EN_LAST:
 					
 					/***
 					//Encrypted AMBE data(XOR)
@@ -773,17 +796,60 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					payload_tx_channel->word[2]	= 0x0000 ;
 					payload_tx_channel->word[3]	= 0x0000 ;
 				
-					payload_tx_state = 0;
+					AMBEpayload_tx_state = AMBE_IDLE;
 				
 				break;
 				
+			case AMBE_DE_FIRST:
+				
+					//0xxxxx
+					payload_tx_channel->word[0] = Radio_Internal_Data[1];
+					//0x8212
+					payload_tx_channel->word[1] = VBSP_data[0];
+					//0xF00x
+					payload_tx_channel->word[2] = VBSP_data[1];
+					//0x88F3
+					payload_tx_channel->word[3] = DECODER_PAYLOAD;
+		
+					AMBEpayload_tx_state = AMBE_DE_SECOND;
+					
+				break;
+			case AMBE_DE_SECOND:
+					
+					//0xxxxx
+					payload_tx_channel->word[0] = AMBEBurst_rawdata[0];
+					//0xxxxx
+					payload_tx_channel->word[1] = AMBEBurst_rawdata[1];
+					//0xxxxx
+					payload_tx_channel->word[2] = AMBEBurst_rawdata[2];
+					//0xxxxx
+					payload_tx_channel->word[3] = AMBEBurst_rawdata[3];
+					
+					AMBEpayload_tx_state = AMBE_DE_LAST;
+			
+				
+				break;
+				
+			case AMBE_DE_LAST:
+				
+					payload_tx_channel->word[0]	= 0x00BA ;
+					payload_tx_channel->word[1]	= 0x0000 ;
+					payload_tx_channel->word[2]	= 0x0000 ;
+					payload_tx_channel->word[3]	= 0x0000 ;
+					
+					AMBEpayload_tx_state = AMBE_IDLE;
+				
+				break;
+				
+				
+				
 			default:
 			
-				payload_tx_channel->dword[0] = PAYLOADIDLE0;
-				payload_tx_channel->dword[1] = PAYLOADIDLE1;
-				
-				payload_tx_state = 0;
-			break;
+					payload_tx_channel->dword[0] = PAYLOADIDLE0;
+					payload_tx_channel->dword[1] = PAYLOADIDLE1;
+					
+					AMBEpayload_tx_state = AMBE_IDLE;
+					break;
 			
 				
 		
@@ -1327,6 +1393,9 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	static U32  RxMedia_IsFillingNext16 = 0;
 	static U32  RxAMBE_IsFillingNext8 = 0;
 	
+	static U32  RxData_IsFillingNext16 = 0;
+	
+	
 	static U32 RxBytesWaiting = 0;
 	static U32 ArrayDiscLength = 0;
 	
@@ -1335,6 +1404,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	
 	static Bool is_first = FALSE;
 	volatile static U8 Item_ID = 0;
+	volatile static U32	Item_Length = 0;
 	
 	static U8  HT_index = 0;
 	
@@ -1418,6 +1488,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				
 				if((NULL== payload_ptr) || (NULL== AMBE_payload_ptr))
 				{
+					logFromISR("\n\r xxxxx_QQ_xxxxx \n\r");//测试是否有这种情况出现
 					break;
 				}
 			}
@@ -1427,98 +1498,213 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					
 			if ((payload_rx_channel->dword[0] & 0x0000F000 ) == PAYLOAD_DATA_ENH )//PAYLOAD_DATA_ENH (0x0c))
 			{
-				AMBE_flag = 1;
-								
+											
 				Item_ID = payload_rx_channel->byte[5];
 				
-				VF_SN = payload_rx_channel->byte[7];//This parameter is very important to the loop back Radio, as a reference.
-					
-				//The OB know the Call begin and discard the Voice Header
-				//The OB know the Call end and discard the Voice  Terminator			
-				if (Item_ID == Raw_Tx_Data_HT)
+				Item_Length = (payload_rx_channel->byte[4] & 0x7F);//7bits
+								
+				switch(Item_ID)
 				{
-					//HT_index = 0;
+					//The OB know the Call begin and discard the Voice Header
+					//The OB know the Call end and discard the Voice  Terminator
+					case Raw_Tx_Data_HT://0xF0
+					case Raw_Rx_Data_HT://0xF1
+					
+							if ((payload_rx_channel->byte[6] & 0xF0 )== 0x10)//header
+							{
+								m_RxBurstType = VOICEHEADER;
+
+							}
+							else if ((payload_rx_channel->byte[6] & 0xF0) == 0x20)//Terminator
+							{
+								m_RxBurstType = VOICETERMINATOR;
+								//In order to complete the save data AMBE stream to SDcard.
+								//AMBE-data and PCM-data is not the same. AMBE is compressed data,
+								//if there was a missing portion, a clear voice is difficult to extract the data.
+								//It must ensure that all the data received AMBE.
+								
+								//注意！！！考虑是否需要把剩余的空间置0。
+								memset((AMBE_payload_ptr+ (RxAMBE_IsFillingNext8 +1)), 0x00, (512-(RxAMBE_IsFillingNext8 + 1)));
+								
+								RxAMBE_IsFillingNext8 = 0;
+								payload_rx(AMBE_payload_ptr);
+								AMBE_payload_ptr = get_payload_idle_isr();
+								//logFromISR("\n\r QQ1 \n\r");
+								
+							}
+							else//error voice
+							{
+								m_RxBurstType = VOICE_WATING;
+							}
+							
+						break;//WAITINGABAB.
+					
+		
+					case Vocoder_Bit_Stream_Parameter://0x12
+							
+							if ((RxBytesWaiting -= 4) <= 0) break;
+					
+							//Vocoder Bits Stream Parameter
+							VF_SN = payload_rx_channel->byte[7];//This parameter is very important to the loop back Radio, as a reference.
+							
+							VBSP_data[0] = payload_rx_channel->word[2];
+							VBSP_data[1] = payload_rx_channel->word[3];
+							
+							m_RxBurstType = CalculateBurst(VF_SN);
+							
+							RxMediaState = READING_AMBE_MEDIA;//Jump
+							
+					
+						break;//Jump to READING_AMBE_MEDIA
+							
+					//Soft decision bits are not require to route back to Radio, the OB can either route it back radio
+					// or discard it to reduce payload size.	
+					//This shouldn't happen, but must check.	
+					case Soft_Decision_Value://0x13
+						m_RxBurstType = VOICE_WATING;
+						
+						break;//WAITINGABAB.
+							
+								
+					case Radio_Internal_Parameter://0x7F
+							
+							logFromISR("\n\r Item_Length:%d\n\r", Item_Length);
+							
+							if ((RxBytesWaiting -= 4) <= 0) break;
+							//Radio Internal Parameter
+							Radio_Internal_Data[RxData_IsFillingNext16] = payload_rx_channel->word[3];
+							RxData_IsFillingNext16 += 1; 
+							Item_Length -= 2 ;
+							//....................................................
+							m_RxBurstType = RADIOINTERNAL;
+
+							RxMediaState = READING_AMBE_AUX;//Jump
+							
+					
+						break;//Jump to READING_AMBE_AUX
+									
+					//case Post_Voice_Encoder_Data://0xF2
+						//break;
+									//
+					//case Pre_Voice_Decoder_Data://0xF3
+						//break;
+									
+					default://0x03,0x04
+						
+						//((Item_ID == 0x04) || (Item_ID == 0x03) )//Unknown type data directly back hair
+							//break;
+							m_RxBurstType = UNSUREDATA;
+							AMBE_HT[0] = payload_rx_channel->dword[0];
+							AMBE_HT[1] = payload_rx_channel->dword[1];
+							
+							if (RxBytesWaiting == 0x00000014)
+							{
+								RxBytesWaiting = 0x18;//24 Reassigned
+								//_flag =0;
+								
+							}
+							if (RxBytesWaiting == 0x00000010)
+							{
+								RxBytesWaiting = 0x10;//16 Reassigned
+								//_flag =1;
+							}
+					
+							RxMediaState = READING_AMBE_MEDIA;//Jump
+					
+						break;//Jump to READING_AMBE_MEDIA
+									
+			
+				}
+			}
+					
+				
+					//
+				////The OB know the Call begin and discard the Voice Header
+				////The OB know the Call end and discard the Voice  Terminator			
+				//if (Item_ID == Raw_Tx_Data_HT)
+				//{
+					////HT_index = 0;
+					////AMBE_HT[0] = payload_rx_channel->dword[0];
+					////AMBE_HT[1] = payload_rx_channel->dword[1];
+					////
+					//if ((payload_rx_channel->byte[6] & 0xF0 )== 0x10)//header
+					//{
+						//m_RxBurstType = VOICEHEADER;		
+//
+					//}
+					//else if ((payload_rx_channel->byte[6] & 0xF0) == 0x20)//Terminator
+					//{
+						//m_RxBurstType = VOICETERMINATOR;
+						////In order to complete the save data AMBE stream to SDcard.
+						////AMBE-data and PCM-data is not the same. AMBE is compressed data,
+						////if there was a missing portion, a clear voice is difficult to extract the data. 
+						////It must ensure that all the data received AMBE.
+						//
+						////注意！！！考虑是否需要把剩余的空间置0。
+						//memset((AMBE_payload_ptr+ (RxAMBE_IsFillingNext8 +1)), 0x00, (512-(RxAMBE_IsFillingNext8 + 1)));
+						//
+						//RxAMBE_IsFillingNext8 = 0;
+						//payload_rx(AMBE_payload_ptr);
+						//AMBE_payload_ptr = get_payload_idle_isr();
+						////logFromISR("\n\r QQ1 \n\r");
+						//
+					//}
+					//else//error voice
+					//{
+						//m_RxBurstType = VOICE_WATING;
+					//}
+					//
+					//break;//WAITINGABAB.
+		//
+						//
+				//}
+				//else if (Item_ID == Vocoder_Bit_Stream_Parameter)//Vocoder Bits Stream Parameter
+				//{	
+						//
+						//VBSP_data[0] = payload_rx_channel->word[2];
+						//VBSP_data[1] = payload_rx_channel->word[3];
+						//m_RxBurstType = CalculateBurst(VF_SN);
+//
+				//}
+				//else if ((Item_ID == 0x04) || (Item_ID == 0x03) )//Unknown type data directly back hair
+				//{
+					////break;
+					//m_RxBurstType = UNSUREDATA;
 					//AMBE_HT[0] = payload_rx_channel->dword[0];
 					//AMBE_HT[1] = payload_rx_channel->dword[1];
 					//
-					if ((payload_rx_channel->byte[6] & 0xF0 )== 0x10)//header
-					{
-						m_RxBurstType = VOICEHEADER;		
-
-					}
-					else if ((payload_rx_channel->byte[6] & 0xF0) == 0x20)//Terminator
-					{
-						m_RxBurstType = VOICETERMINATOR;
-						//In order to complete the save data AMBE stream to SDcard.
-						//AMBE-data and PCM-data is not the same. AMBE is compressed data,
-						//if there was a missing portion, a clear voice is difficult to extract the data. 
-						//It must ensure that all the data received AMBE.
-						
-						//注意！！！考虑是否需要把剩余的空间置0。
-						memset((AMBE_payload_ptr+ (RxAMBE_IsFillingNext8 +1)), 0x00, (512-(RxAMBE_IsFillingNext8 + 1)));
-						
-						RxAMBE_IsFillingNext8 = 0;
-						payload_rx(AMBE_payload_ptr);
-						AMBE_payload_ptr = get_payload_idle_isr();
-						//logFromISR("\n\r QQ1 \n\r");
-						
-					}
-					else//error voice
-					{
-						m_RxBurstType = VOICE_WATING;
-					}
-					
-					break;//WAITINGABAB.
-		
-						
-				}
-				else if (Item_ID == Vocoder_Bit_Stream_Parameter)//Vocoder Bits Stream Parameter
-				{	
-						
-						VBSP_data[0] = payload_rx_channel->word[2];
-						VBSP_data[1] = payload_rx_channel->word[3];
-						m_RxBurstType = CalculateBurst(VF_SN);
-
-				}
-				else if ((Item_ID == 0x04) || (Item_ID == 0x03) )//Unknown type data directly back hair
-				{
+					//if (RxBytesWaiting == 0x00000014)
+					//{
+						//RxBytesWaiting = 0x18;//24 Reassigned
+						////_flag =0;
+							//
+					//}
+					//if (RxBytesWaiting == 0x00000010)
+					//{
+						//RxBytesWaiting = 0x10;//16 Reassigned
+						////_flag =1;	
+					//}
+					//
+					//
+				//}
+				//else
+				//{
+					//
+					//logFromISR("\n\r Item_ID:%x \n\r", payload_rx_channel->word[2]);
+					//logFromISR("\n\r Axiba \n\r");
+					////Soft Decision Value(0x13):
+					////The Soft Decision Value parameter carriers soft decode value of FEC decoding. When used
+					////along with Pre-Voice Decoder Audio Data item, it matches the dedicated bits of Pre-Voice
+					////Decoder Audio Data for their soft decode value.
+					//
+					////Radio Internal Parameter(0x7F):
+					////The OB should use the route back this item to radio without change content.
 					//break;
-					m_RxBurstType = UNSUREDATA;
-					AMBE_HT[0] = payload_rx_channel->dword[0];
-					AMBE_HT[1] = payload_rx_channel->dword[1];
-					
-					if (RxBytesWaiting == 0x00000014)
-					{
-						RxBytesWaiting = 0x18;//24 Reassigned
-						//_flag =0;
-							
-					}
-					if (RxBytesWaiting == 0x00000010)
-					{
-						RxBytesWaiting = 0x10;//16 Reassigned
-						//_flag =1;	
-					}
-					
-					
-				}
-				else
-				{
-					
-					logFromISR("\n\r Item_ID:%x \n\r", payload_rx_channel->word[2]);
-					logFromISR("\n\r Axiba \n\r");
-					//Soft Decision Value(0x13):
-					//The Soft Decision Value parameter carriers soft decode value of FEC decoding. When used
-					//along with Pre-Voice Decoder Audio Data item, it matches the dedicated bits of Pre-Voice
-					//Decoder Audio Data for their soft decode value.
-					
-					//Radio Internal Parameter(0x7F):
-					//The OB should use the route back this item to radio without change content.
-					break;
-				}
-				
-				RxMediaState = READING_AMBE_MEDIA;//Jump
-		
-			}
+				//}
+				//
+				//RxMediaState = READING_AMBE_MEDIA;//Jump
+		//
+			//}
 			
 			else//PCM-media-data
 			{	
@@ -1527,7 +1713,8 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				if (((payload_rx_channel->dword[0] & 0x0000F000 ) != SPEAKER_DATA ) 
 					&& ((payload_rx_channel->dword[0] & 0x0000F000 ) != MIC_DATA ))break;
 				
-				AMBE_flag = 0;
+				AMBE_tx_flag = 0;
+				AMBE_rx_flag = 0;
 				
 				Item_ID = 0;//To make sure your save PCM data.
 				
@@ -1692,12 +1879,15 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			break; //End of READINGMEDIA.
 
 		case READING_AMBE_MEDIA:
-			
+		
+			/****AMBE-media-data ****/
+		
 					if ((Item_ID == Vocoder_Bit_Stream_Parameter))//PAYLOAD_DATA_ENH (0x0c))
 					{
 						Item_ID = payload_rx_channel->byte[1];
-						if (Item_ID == Post_Voice_Encoder_Data)
+						if (Item_ID == Post_Voice_Encoder_Data)//发送方的压缩类型数据
 						{
+							AMBE_tx_flag = 1;
 							
 							RxBytesWaiting = ((payload_rx_channel->dword[0] & 0x7F000000) >>24);//Test calculations are correct; 8
 							
@@ -1889,8 +2079,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					}
 					else if (Item_ID == Post_Voice_Encoder_Data)//(bit48~Pad-bits)
 					{
-						
-						
+					
 						AMBEBurst_rawdata[3] = payload_rx_channel->word[0];//(bit48~Pad-bits)
 						//AMBE_Per_Burst_Flag = 1;
 						
@@ -1920,92 +2109,164 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							break;
 						}	
 						
-						
-						
-						//payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[0];
-						//RxMedia_IsFillingNext16 += 1;
-						//if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
-						//{
-							//RxMedia_IsFillingNext16 = 0;
-							//payload_rx(payload_ptr);
-							//payload_ptr = get_payload_idle_isr();
-							//
-							//if(NULL == payload_ptr){
-								//RxMediaState = WAITINGABAB;
-								//break;
-							//}
-						//}
-				//
-						//if ((RxBytesWaiting -= 2) <= 0)
-						//{
-							//RxMediaState = WAITINGABAB;
-							//break;
-						//}
-						//
-						/******************************
-						*******************
-						//(49bits)This shouldn't happen, but must check.
-						
-						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[1];
-						RxMedia_IsFillingNext16 += 1;
-						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
-						{
-							RxMedia_IsFillingNext16 = 0;
-							payload_rx(payload_ptr);
-							payload_ptr = get_payload_idle_isr();
-							
-							if(NULL == payload_ptr){
-								RxMediaState = WAITINGABAB;
-								break;
-							}
-						}
-						if ((RxBytesWaiting -= 2) <= 0){
-							RxMediaState = WAITINGABAB;
-							break;
-						}
-
-						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[2];
-						RxMedia_IsFillingNext16 += 1;							
-						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
-						{
-							RxMedia_IsFillingNext16 = 0;
-							payload_rx(payload_ptr);
-							payload_ptr = get_payload_idle_isr();
-							
-							if(NULL == payload_ptr){
-								RxMediaState = WAITINGABAB;
-								break;
-							}
-						}
-						if ((RxBytesWaiting -= 2) <= 0){
-							RxMediaState = WAITINGABAB;
-							break;
-						}
-							
-						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
-						RxMedia_IsFillingNext16 += 1;
-						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
-						{
-							RxMedia_IsFillingNext16 = 0;
-							payload_rx(payload_ptr);
-							payload_ptr = get_payload_idle_isr();
-							
-							if(NULL == payload_ptr){
-								RxMediaState = WAITINGABAB;
-								break;
-							}
-						}
-						if ((RxBytesWaiting -= 2) <= 0){
-							RxMediaState = WAITINGABAB;
-							break;
-						}
-						
-					******************************
-						*******************/
-						
 								
 					}
-					
+					else if (Item_ID == Pre_Voice_Decoder_Data)//bit0~bit63
+					{
+						//接收方的解压类型数据
+						//For looping back to Radio
+						AMBEBurst_rawdata[0] = payload_rx_channel->word[0];
+						AMBEBurst_rawdata[1] = payload_rx_channel->word[1];
+						AMBEBurst_rawdata[2] = payload_rx_channel->word[2];
+						AMBEBurst_rawdata[3] = payload_rx_channel->word[3];
+						
+						//To be tested. Also locally stored RAW-AMBER-DATA
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[0];//1
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[1];//2
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[2];//3
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[3];//4
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[4];//5
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[5];//6
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[6];//7
+						RxAMBE_IsFillingNext8 += 1;
+						
+						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+						{
+							RxAMBE_IsFillingNext8 = 0;
+							payload_rx(AMBE_payload_ptr);
+							AMBE_payload_ptr = get_payload_idle_isr();
+							if(NULL == AMBE_payload_ptr)
+							{
+								RxMediaState = WAITINGABAB;
+								break;
+							}
+						}
+						if ((RxBytesWaiting -= 1) <= 0){
+							RxMediaState = WAITINGABAB;
+							break;
+						}
+						
+						//此处丢弃AMBE Vocoder Bits Stream(bit59~63),不予保存
+						if ((RxBytesWaiting -= 1) <= 0){
+							
+							//Soft decision bits are not require to route back to Radio, the OB can either route it back radio
+							//or discard it to reduce payload size.
+							
+							RxMediaState = WAITINGABAB;
+							break;
+						}	
+						
+					}
 					else if ((Item_ID == 0x04)  ||  (Item_ID == 0x03))//Unknown type data directly back hair
 					{
 						AMBE_HT[0] = payload_rx_channel->dword[0];
@@ -2022,32 +2283,6 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						break;
 
 					}
-					//else if(Item_ID == Raw_Tx_Data_HT)
-					//{
-						//HT_index+=1;
-						////
-						////
-						//AMBE_HT[0] = payload_rx_channel->dword[0];
-						//AMBE_HT[1] = payload_rx_channel->dword[1];
-						//
-						//if ((m_RxBurstType == VOICETERMINATOR))//VF_SN==18，
-						//{
-							//RxMedia_IsFillingNext16 = 0;
-							//payload_rx(payload_ptr);
-							//payload_ptr = get_payload_idle_isr();;
-							////RxMediaState  = WAITINGABAB;
-						//}
-							//
-						//if (HT_index == 2)
-						//{
-							//HT_index = 0;
-							//RxMediaState  = WAITINGABAB;
-							//
-						//}
-							//
-						//break;
-						//
-					//}
 					
 					else
 					{
@@ -2059,8 +2294,51 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			
 			break;//End of READING_AMBE_MEDIA.
 
+        case READING_AMBE_AUX:
+			
+				Radio_Internal_Data[RxData_IsFillingNext16] = payload_rx_channel->word[0];
+				RxData_IsFillingNext16 += 1;
+			
+				if ((Item_Length -= 2) <= 0)
+				{
+					RxData_IsFillingNext16 = 0;
+				
+					if (payload_rx_channel->word[1] == 0x8212 )
+					{
+						//Item_ID = Vocoder_Bit_Stream_Parameter;
+						//Vocoder Bits Stream Parameter
+						VF_SN = payload_rx_channel->byte[5];//This parameter is very important to the loop back Radio, as a reference.
+							
+						VBSP_data[0] = payload_rx_channel->word[1];
+						VBSP_data[1] = payload_rx_channel->word[2];
+							
+						m_RxBurstType = CalculateBurst(VF_SN);
+						
+						if (payload_rx_channel->byte[7] == Pre_Voice_Decoder_Data)//0xF3
+						{
+							Item_ID = Pre_Voice_Decoder_Data;
+							RxBytesWaiting = ((payload_rx_channel->dword[1] & 0x00007F00) >>24);//Test calculations are correct; 8
+							AMBE_rx_flag = 1;//本地作为AMBE数据的解密方
+						}
+							
+						RxMediaState = READING_AMBE_MEDIA;//Jump
+					}
+					else
+					{
+						RxMediaState = WAITINGABAB;//Jump
+					}
 
+				}
+				else
+				{//测试看看是几个字节数据
+					logFromISR("\n\r Radio Internal parameter length error \n\r");
+					RxMediaState = WAITINGABAB;//Jump
+				}
 
+		 
+			break;//End of READING_AMBE_AUX.
+		 
+		 
 		//case READINGARRAYDISCRPT:  //So far, this cannot happen, but needed for forward compatibility.
 		////Array descriptorLength is greater than 0 on entry here.
 		//if(ArrayDiscLength > 4){ //All 4 words are still array discriptor.

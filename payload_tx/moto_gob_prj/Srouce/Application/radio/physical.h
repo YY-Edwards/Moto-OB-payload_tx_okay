@@ -121,7 +121,7 @@ For transfer unit M-1 (where M >= 2), indicates the last transfer unit in the se
 #define Raw_Tx_Data_HT	0xF0
 #define Raw_Rx_Data_HT	0xF1
 #define Post_Voice_Encoder_Data	0xF2
-#define Post_Voice_Decoder_Data	0xF3
+#define Pre_Voice_Decoder_Data	0xF3
 
 
 /*send/receive SSC packet status*/
@@ -163,9 +163,21 @@ typedef enum {
 	  WAITINGABAB,
 	  READINGARRAYDISCRPT,
 	  READINGMEDIA,
+	  READING_AMBE_AUX,
 	  READING_AMBE_MEDIA,
 	  BGFORCERESET
   } RxMediaStates;  //enums are 32 bits.
+  
+  typedef enum {
+	  
+	  AMBE_IDLE,
+	  AMBE_EN_FIRST,
+	  AMBE_EN_LAST,
+	  AMBE_DE_FIRST,
+	  AMBE_DE_SECOND,
+	  AMBE_DE_LAST,  
+	   
+   }AMBEPayloadTxStates; //enum are 32 bits.
 
   //typedef enum {
 	  //

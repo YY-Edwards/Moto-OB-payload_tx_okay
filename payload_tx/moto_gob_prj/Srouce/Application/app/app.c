@@ -21,7 +21,9 @@ U32 bunchofrandomstatusflags;
 U8 is_unmute = 0;
 U8 Silent_flag = 0;
 U8 Terminator_Flag = 0;
-U8 AMBE_flag = 0;
+U8 AMBE_rx_flag = 0;
+U8 AMBE_tx_flag = 0;
+
 volatile U8 VF_SN = 0;
 
 /* Declare a variable that will be incremented by the hook function. */
@@ -264,6 +266,7 @@ void AudioRoutingControl_reply_func(xcmp_fragment_t * xcmp)
 	if (xcmp->u8[0] == xcmp_Res_Success)
 	{
 		log("AudioRouting OK");
+		xcmp_IdleTestTone();//提示通道配置成功
 		//is_unmute = 1;
 	}
 	else
@@ -745,7 +748,6 @@ static __app_Thread_(app_cfg)
 		
 	for(;;)
 	{
-		//if((++coun) % 200 ==0)
 		if (0x00000003 == (bunchofrandomstatusflags & 0x00000003))//确认连接成功了，再发送请求
 		{	
 			//if((++coun) % 3 ==0)		
@@ -768,7 +770,6 @@ static __app_Thread_(app_cfg)
 					//xcmp_audio_route_speaker();
 					xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
-					
 					//is_unmute = 1;
 					//xcmp_function_mic();
 					
@@ -792,9 +793,9 @@ static __app_Thread_(app_cfg)
 				else if(isAudioRouting == 2)
 				{
 					
+					xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();
-					xcmp_audio_route_AMBE();
 					//xcmp_audio_route_speaker();
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
@@ -805,6 +806,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 3)
 				{
+					xcmp_audio_route_AMBE();
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
 					//xcmp_exit_enhanced_OB_mode();
@@ -817,78 +819,13 @@ static __app_Thread_(app_cfg)
 				{
 					isAudioRouting++;
 				}
-				//
-					//switch(VF_SN)
-					//{
-						//case 0x01:
-						//case 0x02:
-						//case 0x03:
-						//
-							//Burst_ID = 0x0A;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//case 0x04:
-						//case 0x05:
-						//case 0x06:
-						//
-							//Burst_ID = 0x0B;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//case 0x07:
-						//case 0x08:
-						//case 0x09:
-						//
-							//Burst_ID = 0x0C;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//case 0x0A:
-						//case 0x0B:
-						//case 0x0C:
-						//
-							//Burst_ID = 0x0D;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//case 0x0D:
-						//case 0x0E:
-						//case 0x0F:
-						//
-							//Burst_ID = 0x0E;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//case 0x10:
-						//case 0x11:
-						//case 0x12:
-						//
-							//Burst_ID = 0x0F;
-							//log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-						//
-							//break;
-						//
-						//default:
-						//
-							//Burst_ID = 0x00;
-							////log("\n\r Burst_ID: %x-%d \n\r", Burst_ID, VF_SN);
-							//break;
-						//
-						//
-					//}
-				//
+
 				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
 				log("\n\r un: %d \n\r", is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			
-				log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
+				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);
 				
@@ -901,7 +838,7 @@ static __app_Thread_(app_cfg)
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
-					xcmp_exit_device_control_mode();
+					//xcmp_exit_device_control_mode();
 					//log("\n\r time: %d \n\r", tc_tick);   
 					
 				}
@@ -928,12 +865,6 @@ static __app_Thread_(app_cfg)
 				//}
 			}
 			
-			
-			//fs_saveVoiceInfo("/test.txt", (void *)"send tone \r\n", sizeof("send tone \r\n"));
-			
-			//log("time:%d-%d-%d %d:%d:%d",t.year, t.month, t.day, t.hour, t.minute, t.second);
-			
-			//log("testtime:%d", now->second);
 		}
 		//vTaskDelay(300*2 / portTICK_RATE_MS);//延迟300ms
 		//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
@@ -946,13 +877,13 @@ static __app_Thread_(app_cfg)
 static void app_payload_rx_proc(void  * payload)
 {
 	log("\n\r w: \n\r");
-	if (AMBE_flag)
+	if (AMBE_tx_flag)//本地发送方的mic录音
 	{
 		fl_write("AMBEvo.bit", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
 	}
 	else
 	{
-		fl_write("PCMvo.pcm", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+		//fl_write("PCMvo.pcm", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
 	}
 	
 	//payload_fragment_t * ptr = (payload_fragment_t *)payload;
@@ -965,17 +896,17 @@ static void app_payload_tx_proc(void  * payload)
 {
   log("R");
   
-  if (AMBE_flag)
-  {
-	  fl_read("AMBEvo.bit", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
-  }
-  else
-  {
-	  fl_read("PCMvo.pcm", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
-  }
-  
-  
-  set_payload_idle(payload);
+  //if (AMBE_flag)
+  //{
+	  //fl_read("AMBEvo.bit", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  //}
+  //else
+  //{
+	  //fl_read("PCMvo.pcm", FILE_BEGIN, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+  //}
+  //
+  //
+  //set_payload_idle(payload);
 
 
 }

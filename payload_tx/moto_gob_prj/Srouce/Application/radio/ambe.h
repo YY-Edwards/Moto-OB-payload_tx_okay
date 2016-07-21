@@ -11,16 +11,24 @@
 
 #include "compiler.h"
 
-//assemble 2 items into 1 command and send it to the OB.
+//TX:assemble 2 items into 1 command and send it to the OB.
+//RX:assemble 4 items into 1 command and send it to the OB.
 volatile U16 SendAMBEBurst_EncryptionPackage[12*10];	//Vocoder Bits Stream Parameter + 20ms AMBE bits of Voice Burst A(B,C,D,E,F)
-volatile U16 VBSP_data[2];				//Vocoder Bits Stream Parameter,RX:keep Radio Vocoder Bits Stream Parameter unchanged.
-volatile U16 AMBEBurst_rawdata[4];		//Radio shall send 20ms AMBE bits of Voice Burst A(B,C,D,E,F)49bits
+volatile U16 VBSP_data[2];								//Vocoder Bits Stream Parameter,RX:keep Radio Vocoder Bits Stream Parameter unchanged.
+volatile U16 AMBEBurst_rawdata[4];						//Radio shall send 20ms AMBE bits of Voice Burst A(B,C,D,E,F)49bits
+
+//volatile U16 *Radio_Internal_Data;
+volatile U16 Radio_Internal_Data[2];				//It carries some parameters required by radio.
+volatile U16 Soft_Decision_Value[4];					//The Soft Decision Value parameter carriers soft decode value of FEC decoding. When used
+														//along with Pre-Voice Decoder Audio Data item, it matches the dedicated bits of Pre-Voice
+														//Decoder Audio Data for their soft decode value.
 
 
  typedef enum {
 	  
 	  VOICE_WATING,
 	  VOICEHEADER,
+	  RADIOINTERNAL,
 	  UNSUREDATA,
 	  VOICEBURST_A,
 	  VOICEBURST_B,
