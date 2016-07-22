@@ -625,6 +625,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 	static U32 send_num = 0;
 	
 	static U32 i = 0;
+	
 	//static U8 frame_5_end = 0;
 	//static U16 pay[256];
 	
@@ -667,7 +668,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						AMBEpayload_tx_state = AMBE_DE_FIRST;
 					}
 					
-					else
+					else//加密数据
 					{
 	
 						//0xABCDCOOE
@@ -806,8 +807,17 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					payload_tx_channel->word[0] = Radio_Internal_Data[1];
 					//0x8212
 					payload_tx_channel->word[1] = VBSP_data[0];
-					//0xF00x
-					payload_tx_channel->word[2] = VBSP_data[1];
+					
+					if ((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1) )
+					{
+						// Vocoder Bits Stream Parameter("E" flag = 1)
+						//0xF08x
+						payload_tx_channel->word[2] = ((VBSP_data[1]) | (0x0080));
+					}
+					else
+						//0xF00x
+						payload_tx_channel->word[2] = (VBSP_data[1]) ;
+					
 					//0x88F3
 					payload_tx_channel->word[3] = DECODER_PAYLOAD;
 		
@@ -816,18 +826,81 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				break;
 			case AMBE_DE_SECOND:
 					
-					//0xxxxx
-					payload_tx_channel->word[0] = AMBEBurst_rawdata[0];
-					//0xxxxx
-					payload_tx_channel->word[1] = AMBEBurst_rawdata[1];
-					//0xxxxx
-					payload_tx_channel->word[2] = AMBEBurst_rawdata[2];
-					//0xxxxx
-					payload_tx_channel->word[3] = AMBEBurst_rawdata[3];
+				switch (m_RxBurstType)//在发送函数中去做解密处理
+				{
+					case VOICEBURST_A:
+							if (VF_SN == 1)
+							{	
+								//Pick up public key
+								
+								AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
+								AMBE_DecryptionKey[1] = AMBEBurst_rawdata[1];
+								AMBE_DecryptionKey[2] = AMBEBurst_rawdata[2];
+								AMBE_DecryptionKey[3] = AMBEBurst_rawdata[3];
+								
+								//Post back data
+								payload_tx_channel->word[0] = AMBEBurst_rawdata[0] ;
+								payload_tx_channel->word[1] = AMBEBurst_rawdata[1] ;
+								payload_tx_channel->word[2] = AMBEBurst_rawdata[2] ;
+								payload_tx_channel->word[3] = AMBEBurst_rawdata[3] ;
+								
+							
+								//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
+								//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
+								//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];				
+								//logFromISR("\n\r MMQ \n\r");
+						
+							}
+							else//VF_SN==2/3
+							{
+								
+								
+						
+								//Decrypt AMBE data(XOR) 
+								//Recover data
+								payload_tx_channel->word[0] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+								payload_tx_channel->word[1] = ((AMBE_DecryptionKey[1]) ^ (AMBEBurst_rawdata[1])) ;
+								payload_tx_channel->word[2] = ((AMBE_DecryptionKey[2]) ^ (AMBEBurst_rawdata[2])) ;
+								payload_tx_channel->word[3] = ((AMBE_DecryptionKey[3]) ^ (AMBEBurst_rawdata[3])) ;
+							
+								//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
+								//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
+								//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];
+							
+						
+							}
 					
-					AMBEpayload_tx_state = AMBE_DE_LAST;
-			
+							AMBEpayload_tx_state = AMBE_DE_LAST;
+					
+						break;
+					
+					case VOICEBURST_B:
+					case VOICEBURST_C:	
+					case VOICEBURST_D:	
+					case VOICEBURST_E:
+					case VOICEBURST_F:
+						
+							//Encrypted AMBE data(XOR)
+						
+							//Decrypt AMBE data(XOR)
+							//Recover data
+							payload_tx_channel->word[0] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+							payload_tx_channel->word[1] = ((AMBE_DecryptionKey[1]) ^ (AMBEBurst_rawdata[1])) ;
+							payload_tx_channel->word[2] = ((AMBE_DecryptionKey[2]) ^ (AMBEBurst_rawdata[2])) ;
+							payload_tx_channel->word[3] = ((AMBE_DecryptionKey[3]) ^ (AMBEBurst_rawdata[3])) ;
+						
+							AMBEpayload_tx_state = AMBE_DE_LAST;
 				
+						break;
+					default://This shouldn't happen, but must check;
+					
+							payload_tx_channel->dword[0] = PAYLOADIDLE0;
+							payload_tx_channel->dword[1] = PAYLOADIDLE1;
+							AMBEpayload_tx_state = AMBE_IDLE;
+					
+						break;
+				}
+		
 				break;
 				
 			case AMBE_DE_LAST:
@@ -840,9 +913,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					AMBEpayload_tx_state = AMBE_IDLE;
 				
 				break;
-				
-				
-				
+		
 			default:
 			
 					payload_tx_channel->dword[0] = PAYLOADIDLE0;
