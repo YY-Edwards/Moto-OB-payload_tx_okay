@@ -430,15 +430,15 @@ void xcmp_audio_route_mic(void)
 	ptr->Function = Routing_Func_Update_Source;
 	
 	
-	unsigned short NumberofRoutings = 1;//2;
+	unsigned short NumberofRoutings = 2;
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] = NumberofRoutings & 0xFF;
 	
 	ptr->RoutingData[0].audioInput = IN_Microphone;
 	ptr->RoutingData[0].audioOutput = OUT_Option_Board;
 	
-	//ptr->RoutingData[1].audioInput = IN_Option_Board;
-	//ptr->RoutingData[1].audioOutput = OUT_Microphone_Data;
+	ptr->RoutingData[1].audioInput = IN_Option_Board;
+	ptr->RoutingData[1].audioOutput = OUT_Microphone_Data;
 		//
 	/*send xcmp frame*/
 	xcmp_tx( &xcmp_farme, sizeof(AudioRoutingControl_req_t) - (MAX_ROUTING_CTR - NumberofRoutings) * sizeof(RoutingData_t));
@@ -893,8 +893,6 @@ void xcmp_transmit_control( void )
 	ptr->Function = KEY_UP ;
 	ptr->Mode_Of_Operation = MODE_VOICE;
 	ptr->TT_Source = 0x00;
-	
-	
 	
 	/*send xcmp frame*/
 	xcmp_tx( &xcmp_farme, sizeof(TransmitControl_req_t));

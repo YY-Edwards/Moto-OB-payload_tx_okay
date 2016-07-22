@@ -106,16 +106,16 @@ void payload_init(void ( *payload_rx_func)(void * ), void ( *payload_tx_func)(vo
 	,  NULL
 	);
 	
-	/*this task is used to transmit  payload message*/
-	xTaskCreate(
-	payload_tx_process
-	,  (const signed portCHAR *)"PAYLOAD_TX"
-	,  1024
-	,  NULL
-	,  2
-	,  NULL
-	);
-	
+	///*this task is used to transmit  payload message*/
+	//xTaskCreate(
+	//payload_tx_process
+	//,  (const signed portCHAR *)"PAYLOAD_TX"
+	//,  1024
+	//,  NULL
+	//,  2
+	//,  NULL
+	//);
+	//
 	
 }
 

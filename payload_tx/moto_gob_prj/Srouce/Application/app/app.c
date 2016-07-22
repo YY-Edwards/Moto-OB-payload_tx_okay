@@ -23,6 +23,8 @@ U8 Silent_flag = 0;
 U8 Terminator_Flag = 0;
 U8 AMBE_rx_flag = 0;
 U8 AMBE_tx_flag = 0;
+U8 Radio_Transmit_State = 0;// in standby or receive mode
+U8 Mic_is_Enabled = 0;
 
 volatile U8 VF_SN = 0;
 
@@ -166,6 +168,16 @@ void mic_brdcst_func(xcmp_fragment_t * xcmp)
 	//log("\n\r Mic_brdcst \n\r");		
 	//log("\n\r Mic_type: %x \n\r " ,  ptr->Mic_Type);
 	//log("\n\r Signal_type: %x \n\r " ,  ptr->Signaling_Type);
+	if (ptr->Mic_State == 0x00)
+	{
+		log("\n\r Mic_Disabled \n\r");	
+		Mic_is_Enabled = 0;
+	} 
+	if(ptr->Mic_State == 0x11)
+	{
+		log("\n\r Mic_Enabled \n\r");	
+		Mic_is_Enabled = 1;
+	}
 	//log("\n\r Mic_state: %x \n\r " ,  ptr->Mic_State);
 	//log("\n\r Gain_offset: %x \n\r " ,  ptr->Gain_Offset);
 			
@@ -253,9 +265,9 @@ void Volume_brdcst_func(xcmp_fragment_t * xcmp)
 	/*point to xcmp payload*/
 	VolumeControl_brdcst_t *ptr = (VolumeControl_brdcst_t* )xcmp->u8;
 	
-	log("\n\r Attenuator_Number: %x \n\r",  ((ptr->Attenuator_Number[0]<<8) | (ptr->Attenuator_Number[1])) );
+	//log("\n\r Attenuator_Number: %x \n\r",  ((ptr->Attenuator_Number[0]<<8) | (ptr->Attenuator_Number[1])) );
 	
-	log("\n\r Audio_Parameter: %x \n\r", ptr->Audio_Parameter);
+	//log("\n\r Audio_Parameter: %x \n\r", ptr->Audio_Parameter);
 	
 	
 }
@@ -267,6 +279,8 @@ void AudioRoutingControl_reply_func(xcmp_fragment_t * xcmp)
 	{
 		log("AudioRouting OK");
 		xcmp_IdleTestTone();//提示通道配置成功
+		xcmp_IdleTestTone();
+		xcmp_IdleTestTone();
 		//is_unmute = 1;
 	}
 	else
@@ -285,19 +299,19 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	log("\n\r num_routings: %d \n\r", num_routings);
-	
-	for(j = 0; j< num_routings ; j++ )
-	{
-		
-		
-		log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
-		log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
-		
-		
-	}
-	
-	log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
+	//log("\n\r num_routings: %d \n\r", num_routings);
+	//
+	//for(j = 0; j< num_routings ; j++ )
+	//{
+		//
+		//
+		//log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
+		//log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
+		//
+		//
+	//}
+	//
+	//log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
 	
 	
 	
@@ -352,6 +366,16 @@ void TransmitControl_brdcst_func(xcmp_fragment_t * xcmp)
 	TransmitControl_brdcast_t *ptr = (TransmitControl_brdcast_t* )xcmp->u8;
 	//log("\n\r  TransmitControl broadcast \n\r ");
 	//log("\n\r  Mode_Of_Operation: %x \n\r ", ptr->Mode_Of_Operation );
+	if (ptr->State == 0x00)
+	{
+		log("\n\r  Standby-Receive \n\r ");
+		Radio_Transmit_State = 0;
+	}
+	if (ptr->State == 0x01)
+	{
+		log("\n\r  Transmit \n\r ");
+		Radio_Transmit_State = 1;
+	}
 	//log("\n\r  State: %x \n\r ", ptr->State );
 	//log("\n\r  State_change_reason: %x \n\r ", ptr->State_change_reason );
 	//
@@ -718,6 +742,7 @@ static const volatile app_exec_t the_app_list[MAX_APP_FUNC]=
 
 void app_init(void)
 {	
+	//将app_payload_rx_proc更改为PCM加密功能
 	payload_init( app_payload_rx_proc , app_payload_tx_proc );	
 	xcmp_register_app_list(the_app_list);
 			
@@ -756,19 +781,19 @@ static __app_Thread_(app_cfg)
 				// xcmp_audio_route_speaker();
 				//xcmp_IdleTestTone();
 				
-				if (Terminator_Flag == 1)
-				{
-					//xcmp_transmit_dekeycontrol();
-					
-				}
+				//if (Terminator_Flag == 1)
+				//{
+					////xcmp_transmit_dekeycontrol();
+					//
+				//}
 				
 				if(isAudioRouting == 0)
 				{
 					//xcmp_data_session();
-					//xcmp_audio_route_mic();
+					xcmp_audio_route_mic();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
-					xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
+					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//is_unmute = 1;
 					//xcmp_function_mic();
@@ -779,9 +804,9 @@ static __app_Thread_(app_cfg)
 				{
 					//xcmp_function_mic();
 					//xcmp_data_session();
-				   // xcmp_transmit_control();
+				    //xcmp_transmit_control();
 					//xcmp_volume_control();
-					xcmp_enter_enhanced_OB_mode();
+					//xcmp_enter_enhanced_OB_mode();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
 					//xcmp_unmute_speaker();
@@ -793,7 +818,7 @@ static __app_Thread_(app_cfg)
 				else if(isAudioRouting == 2)
 				{
 					
-					xcmp_exit_device_control_mode();
+					//xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();
 					//xcmp_audio_route_speaker();
@@ -806,7 +831,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 3)
 				{
-					xcmp_audio_route_AMBE();
+					//xcmp_audio_route_AMBE();
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
 					//xcmp_exit_enhanced_OB_mode();
@@ -821,7 +846,7 @@ static __app_Thread_(app_cfg)
 				}
 
 				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
-				log("\n\r un: %d \n\r", is_unmute);
+				//log("\n\r un: %d \n\r", is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			
@@ -876,10 +901,18 @@ static __app_Thread_(app_cfg)
 
 static void app_payload_rx_proc(void  * payload)
 {
-	log("\n\r w: \n\r");
+	static  U8 times_counter = 0;
+	
+	times_counter++;
+	if (times_counter == 30)
+	{
+		times_counter = 0 ;
+		log("\n\r w: \n\r");
+	}
+	//log("\n\r w: \n\r");
 	if (AMBE_tx_flag)//本地发送方的mic录音
 	{
-		fl_write("AMBEvo.bit", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
+		//fl_write("AMBEvo.bit", FILE_END, payload, MAX_PAYLOAD_BUFF_SIZE * 2);
 	}
 	else
 	{

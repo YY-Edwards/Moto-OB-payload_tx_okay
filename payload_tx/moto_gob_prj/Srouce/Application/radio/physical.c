@@ -599,6 +599,9 @@ extern U8 AMBE_tx_flag;
 extern U8 VF_SN ;
 extern U8 Burst_ID;
 
+extern U8 Radio_Transmit_State;// in standby or receive mode
+extern U8 Mic_is_Enabled;
+
 /*if enable send/receive payload(media), defined in physical.h*/
 #if ENABLE == PAYLOAD_ENABLE
 /**
@@ -928,7 +931,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 
 	}//end of Send-AMBE-data
 
-#if 1
+#if 0
 else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 {
 	
@@ -1144,14 +1147,14 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 
 #endif
 
-#if 0
+#if 1
 	
 	else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 	{
 		
 		index = (index >=30240) ? 0 : index;
 		
-		if(is_unmute == 1)counter++;
+		if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))counter++;
 		
 		switch(payload_tx_state)
 		{
@@ -1160,11 +1163,10 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 					payload_tx_channel->dword[0] = PAYLOADIDLE0;
 					payload_tx_channel->dword[1] = PAYLOADIDLE1;
 	
-					if((counter % 160== 0) && (counter != 0) &&(is_unmute == 1))//160*125us = 20ms; 
-					//if((counter % 20== 0) && (counter != 0) &&(is_unmute == 1))//20*125us = 2.5ms.
+					if((counter % 160== 0) && (counter != 0) &&(Radio_Transmit_State == 1))//160*125us = 20ms; 
 					{
 						payload_tx_state = 1;
-						//payload_tx_state = 0;
+	
 						frame_number = 0;
 						//logFromISR("\n\r payload_tx_state: %d \n\r", payload_tx_state);
 					}
@@ -1182,7 +1184,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				{
 					//first frame
 					expexted_length = 0xFE;
-					payload_tx_channel->word[1] = 0x11FE;//0x21FE;//0x11FE; //254 bytes;		mic_data?
+					payload_tx_channel->word[1] = 0x21FE;//0x11FE; //254 bytes;		mic_data?
 					last_frame = FALSE;
 				}
 				else if(frame_number + 1 >= 2) //2frame
@@ -1199,14 +1201,14 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 					{
 						//即是(254+70)324betes-4bytes= 320bytes
 						expexted_length = 0x46;//One Descriptor Indicator
-						payload_tx_channel->word[1] = 0x1346;//70bytes
+						payload_tx_channel->word[1] = 0x2346;//70bytes
 					}
 		
 					else
 					{
 						///即是(254+68)322betes-2bytes(no Descriptor Indicator)= 320bytes
 						expexted_length = 0x44;//no Descriptor Indicator
-						payload_tx_channel->word[1] = 0x1344;//0x1344;//0x2344;// 0x1344; //68bytes
+						payload_tx_channel->word[1] = 0x2344;//0x1344;//0x2344;// 0x1344; //68bytes
 					}
 					//}
 		
@@ -1218,7 +1220,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				{
 					//middle frame
 					expexted_length = 0xFE;
-					payload_tx_channel->word[1] = 0x12FE;//0x22FE;//0x12FE;
+					payload_tx_channel->word[1] = 0x22FE;//0x22FE;//0x12FE;
 					last_frame = FALSE;
 				}
 	
