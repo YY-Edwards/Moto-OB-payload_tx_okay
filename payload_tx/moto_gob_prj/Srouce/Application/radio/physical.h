@@ -29,10 +29,12 @@ History:
 #define PLAYBACK_ENABLE ENABLE
 
 #define MAX_PAYLOAD_BUFF_SIZE 256
+//#define MAX_PAYLOAD_BUFF_SIZE 160//160samles
+
 #define MAX_PAYLOAD_STORE 10
 /*the queue depth is used to create the payload(media) queue*/
 #define TX_PAYLOAD_QUEUE_DEEP	5
-#define RX_PAYLOAD_QUEUE_DEEP	5
+#define RX_PAYLOAD_QUEUE_DEEP	5//5
 
 /*
 16-bit raw PCM audio data sampled at 8 kHz routed to the radio¡¯s main speaker

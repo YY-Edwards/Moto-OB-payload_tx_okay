@@ -31,25 +31,25 @@ Description: Transmit the payload
 Calls:
 Called By:task
 */
-static void payload_tx_process(void * pvParameters)
-{
-	/*To store the elements in the queue*/
-	U16  * payload_ptr;
-	
-	if(NULL == phy_payload_frame_tx)
-	{
-		phy_payload_frame_tx = xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
-	}
-	
-	for(;;)
-	{
-		if(pdTRUE == xQueueReceive( phy_payload_frame_tx, &payload_ptr,portMAX_DELAY ))
-		{
-			payload_tx_exec(payload_ptr);//app_payload_tx_proc();
-		}
-
-	}
-}
+//static void payload_tx_process(void * pvParameters)
+//{
+	///*To store the elements in the queue*/
+	//U16  * payload_ptr;
+	//
+	//if(NULL == phy_payload_frame_tx)
+	//{
+		//phy_payload_frame_tx = xQueueCreate(TX_PAYLOAD_QUEUE_DEEP, sizeof(phy_fragment_t *));
+	//}
+	//
+	//for(;;)
+	//{
+		//if(pdTRUE == xQueueReceive( phy_payload_frame_tx, &payload_ptr,portMAX_DELAY ))
+		//{
+			//payload_tx_exec(payload_ptr);//app_payload_tx_proc();
+		//}
+//
+	//}
+//}
 
 
 
@@ -74,7 +74,7 @@ static void payload_rx_process(void * pvParameters)
 	{
 		if(pdTRUE == xQueueReceive( phy_payload_frame_rx, &payload_ptr,portMAX_DELAY ))
 		{			
-			payload_rx_exec(payload_ptr);//app_payload_rx_proc();
+			payload_rx_exec(payload_ptr);//app_payload_rx_proc();//´Ë´¦Ìø×ª¡£¡£¡£¡£
 		}
 	
 	}

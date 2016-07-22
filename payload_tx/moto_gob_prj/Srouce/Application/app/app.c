@@ -209,14 +209,14 @@ void spk_brdcst_func(xcmp_fragment_t * xcmp)
 	if (xcmp->u8[3] == xcmp_Res_Success)//0x0000:mute
 	{
 		is_unmute =0;
-		Silent_flag = 0;
+		//Silent_flag = 0;
 		log("spk_s_close ");
 		
 		
 	}
 	else
 	{
-		Silent_flag = 1;
+		//Silent_flag = 1;
 		//is_unmute = 1;
 		log("spk_s_open ");
 	}
@@ -904,7 +904,7 @@ static void app_payload_rx_proc(void  * payload)
 	static  U8 times_counter = 0;
 	
 	times_counter++;
-	if (times_counter == 30)
+	if (times_counter == 110)
 	{
 		times_counter = 0 ;
 		log("\n\r w: \n\r");
