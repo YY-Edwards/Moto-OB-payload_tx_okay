@@ -439,6 +439,13 @@ void xcmp_audio_route_mic(void)
 	
 	ptr->RoutingData[1].audioInput = IN_Option_Board;
 	ptr->RoutingData[1].audioOutput = OUT_Microphone_Data;
+	
+	//ptr->RoutingData[2].audioInput = IN_Pre_Speaker_Audio_Data;//IN_Pre_Speaker_Audio_Data;//IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[2].audioOutput = OUT_Option_Board;//OUT_Option_Board;//OUT_Microphone_Data;//≤‚ ‘
+	//
+	//ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = OUT_Speaker;//OUT_Microphone_Data;//≤‚ ‘
+	
 		//
 	/*send xcmp frame*/
 	xcmp_tx( &xcmp_farme, sizeof(AudioRoutingControl_req_t) - (MAX_ROUTING_CTR - NumberofRoutings) * sizeof(RoutingData_t));

@@ -594,7 +594,7 @@ static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 extern char AMBE_AudioData[];
 extern char AudioData[];
 extern U16 Public_AMBEkey[];
-extern U8 is_unmute;
+extern U8 Speaker_is_unmute;
 extern U8 Silent_flag;
 extern U8 Terminator_Flag;
 extern U8 AMBE_rx_flag;
@@ -1436,35 +1436,82 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 		else////PCM encryption Mic media data
 		{
 		
-			if ((Payload_frame_DATA_1 == 0xABCD21fe) || (Payload_frame_DATA_1 == 0xABCD2346)
-			|| (Payload_frame_DATA_1 == 0x00ba000) )
-			{
+			//if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))//加密发送
+			{//发送方加密
+						
+				if ( ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD2000)
+				|| ((Payload_frame_DATA_1 & 0xFFFF0000) == 0x00BA0000) || ((Payload_frame_DATA_1 & 0x0000FFFF) == 0x000000BA)
+				|| ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD1000))
+				{
 			
-		
-				payload_tx_channel->word[0] = PCM_frame_Payload[0];
-				payload_tx_channel->word[1] = PCM_frame_Payload[1];
-				payload_tx_channel->word[2] = PCM_frame_Payload[2];
-				payload_tx_channel->word[3] = PCM_frame_Payload[3];
-			}
-			else//PCM encryption
-			{
-				if (Silent_flag)
-				{
-					payload_tx_channel->word[0] = PCM_frame_Payload[0];
-					payload_tx_channel->word[1] = PCM_frame_Payload[1];
-					payload_tx_channel->word[2] = PCM_frame_Payload[2];
-					payload_tx_channel->word[3] = PCM_frame_Payload[3];
-				}
-				else
-				{
 				
-					payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
-					payload_tx_channel->word[1] = (PCM_frame_Payload[1] );
-					payload_tx_channel->word[2] = (PCM_frame_Payload[2]);
-					payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
+					payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+					payload_tx_channel->dword[1] = Payload_frame_DATA_2;
 				
 				}
+				else//PCM encryption
+				{
+					if (Silent_flag)
+					{
+						payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+						payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+
+					}
+					else
+					{
+				
+						payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
+						payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
+						payload_tx_channel->word[2] = (PCM_frame_Payload[2] ^ Public_PCMkey);
+						payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
+				
+					}
+				}
 			}
+			
+			//else if ((Radio_Transmit_State == 0) && (Speaker_is_unmute == 1))//解密回发
+			//{
+				
+				//if ((Payload_frame_DATA_1 == 0xABCD11fe) || (Payload_frame_DATA_1 == 0xABCD1346)
+				//|| (Payload_frame_DATA_1 == 0x00ba000) )
+				//{
+					//
+					//payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+					//payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+					//
+					////payload_tx_channel->word[0] = PCM_frame_Payload[0];
+					////payload_tx_channel->word[1] = PCM_frame_Payload[1];
+					////payload_tx_channel->word[2] = PCM_frame_Payload[2];
+					////payload_tx_channel->word[3] = PCM_frame_Payload[3];
+				//}
+				//else//PCM decoding
+				//{
+					//if (Silent_flag)
+					//{
+						//payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+						//payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+					//}
+					//else
+					//{
+						//
+						//payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
+						//payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
+						//payload_tx_channel->word[2] = (PCM_frame_Payload[2]);
+						//payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//解密
+						//
+					//}
+				//}
+				
+				
+			//}
+			//
+			//else
+			//{
+				//
+			//
+				//payload_tx_channel->dword[0] = PAYLOADIDLE0;
+				//payload_tx_channel->dword[1] = PAYLOADIDLE1;
+			//}
 
 		
 			//PCM encryption
@@ -1887,10 +1934,10 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				if (((payload_rx_channel->dword[0] & 0x0000F000 ) != SPEAKER_DATA ) 
 					&& ((payload_rx_channel->dword[0] & 0x0000F000 ) != MIC_DATA ))break;
 							
-					if ((payload_rx_channel->dword[0] & 0x0000F000 ) == SPEAKER_DATA)
-					{
-						break;//65794的机器通道有问题
-					}
+					//if ((payload_rx_channel->dword[0] & 0x0000F000 ) == SPEAKER_DATA)
+					//{
+						//break;//65794的机器通道有问题
+					//}
 				AMBE_tx_flag = 0;
 				AMBE_rx_flag = 0;
 				

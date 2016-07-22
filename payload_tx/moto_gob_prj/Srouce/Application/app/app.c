@@ -18,7 +18,7 @@ static __app_Thread_(app_cfg);
 
 U32 bunchofrandomstatusflags;
 
-U8 is_unmute = 0;
+U8 Speaker_is_unmute = 0;
 U8 Silent_flag = 0;
 U8 Terminator_Flag = 0;
 U8 AMBE_rx_flag = 0;
@@ -191,7 +191,7 @@ void spk_reply_func(xcmp_fragment_t * xcmp)
 		
 		if(xcmp->u8[4])
 		{
-			is_unmute = 1;
+			//Speaker_is_unmute = 1;
 			
 			//Silent_flag = 1;
 		}
@@ -208,7 +208,7 @@ void spk_brdcst_func(xcmp_fragment_t * xcmp)
 {
 	if (xcmp->u8[3] == xcmp_Res_Success)//0x0000:mute
 	{
-		is_unmute =0;
+		Speaker_is_unmute =0;
 		//Silent_flag = 0;
 		log("spk_s_close ");
 		
@@ -217,8 +217,11 @@ void spk_brdcst_func(xcmp_fragment_t * xcmp)
 	else
 	{
 		//Silent_flag = 1;
-		//is_unmute = 1;
+		//Speaker_is_unmute = 1;
 		log("spk_s_open ");
+		//解密方，重新配置通道
+		//xcmp_audio_route_speaker();
+		
 	}
 	
 	
@@ -277,6 +280,7 @@ void AudioRoutingControl_reply_func(xcmp_fragment_t * xcmp)
 {
 	if (xcmp->u8[0] == xcmp_Res_Success)
 	{
+		
 		log("AudioRouting OK");
 		xcmp_IdleTestTone();//提示通道配置成功
 		xcmp_IdleTestTone();
@@ -299,18 +303,26 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	//log("\n\r num_routings: %d \n\r", num_routings);
-	//
-	//for(j = 0; j< num_routings ; j++ )
-	//{
-		//
-		//
-		//log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
-		//log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
-		//
-		//
-	//}
-	//
+	log("\n\r num_routings: %d \n\r", num_routings);
+	
+	for(j = 0; j< num_routings ; j++ )
+	{
+		
+		
+		log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
+		log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
+		if (xcmp->u8[2+j*2] == 0x0d)
+		{
+			if (xcmp->u8[3+j*2] == 0x0c)
+			{
+				//Speaker_is_unmute = 1;
+				log("Speaker IA OK");
+			}
+		}
+		
+		
+	}
+	
 	//log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
 	
 	
@@ -339,7 +351,7 @@ void TransmitControl_reply_func(xcmp_fragment_t * xcmp)
 		}
 		else if (ptr->Function ==DE_KEY)
 		{
-			is_unmute = 0;
+			//is_unmute = 0;
 		}
 		else
 		{
@@ -790,9 +802,9 @@ static __app_Thread_(app_cfg)
 				if(isAudioRouting == 0)
 				{
 					//xcmp_data_session();
-					xcmp_audio_route_mic();
+					//xcmp_audio_route_mic();
 					//xcmp_button_config();
-					//xcmp_audio_route_speaker();
+					xcmp_audio_route_speaker();
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//is_unmute = 1;
