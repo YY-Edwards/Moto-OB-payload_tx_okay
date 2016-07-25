@@ -64,6 +64,7 @@ static U8 AMBE_Per_Burst_Flag = 0;
 
 volatile xQueueHandle test_tx = NULL;
 extern U32 tc_tick;
+extern U32 bunchofrandomstatusflags;
 /**
 Function: phy_init
 Description: initialize the SSC;
@@ -597,6 +598,8 @@ extern U16 Public_AMBEkey[];
 extern U8 Speaker_is_unmute;
 extern U8 Silent_flag;
 extern U8 Terminator_Flag;
+extern U8 Tone_flag ;
+extern U32 Tone_Counters;
 extern U8 AMBE_rx_flag;
 extern U8 AMBE_tx_flag;
 extern U8 VF_SN ;
@@ -1159,9 +1162,9 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 {
 		/*To store the elements in the queue*/
-		U16  * payload_ptr;
+		//U16  * payload_ptr;
 		
-		index = (index >=320) ? 0 : index;
+		index = (index >=30240) ? 0 : index;
 		
 		if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))counter++;
 
@@ -1182,16 +1185,16 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 								frame_number = 0;
 								//logFromISR("\n\r payload_tx_state: %d \n\r", payload_tx_state);
 							}
-							else
-							{
-		
-								//logFromISR("\n\r receive full \n\r");
-								payload_tx_state = 0;
-								
-							}
+							//else
+							//{
+		//
+								////logFromISR("\n\r receive full \n\r");
+								//payload_tx_state = 0;
+								//
+							//}
 						}
 					
-						send_num++;
+						//send_num++;
 		
 					break;
 			
@@ -1289,8 +1292,8 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 						else
 						{
 							payload_tx_channel->word[2] = 0x0000;
-							payload_tx_channel->word[3] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
-							//payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+							//payload_tx_channel->word[3] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
+							payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 							index+=2;
 						
 						}
@@ -1330,8 +1333,8 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 					}
 					else
 					{
-						payload_tx_channel->word[0] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
-						//payload_tx_channel->word[0] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+						//payload_tx_channel->word[0] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
+						payload_tx_channel->word[0] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 						index+=2;
 		
 					}
@@ -1353,8 +1356,8 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 					}	
 					else
 					{
-						payload_tx_channel->word[1] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
-						//payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+						//payload_tx_channel->word[1] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
+						payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 						index+=2;
 					}
 					//payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
@@ -1375,8 +1378,8 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 					}
 					else
 					{
-						payload_tx_channel->word[2] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
-						//payload_tx_channel->word[2] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+						//payload_tx_channel->word[2] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
+						payload_tx_channel->word[2] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 						index+=2;
 					}
 					//payload_tx_channel->word[2] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
@@ -1396,8 +1399,8 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 					}
 					else
 					{
-						payload_tx_channel->word[3] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
-						//payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+						//payload_tx_channel->word[3] =  ((payload_ptr[index]<<8 )+ payload_ptr[index+1] );
+						payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 						index+=2;
 					}
 	
@@ -1425,113 +1428,68 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 		Payload_frame_DATA_1 = ((PCM_frame_Payload[0]<<16) | (PCM_frame_Payload[1]));
 		Payload_frame_DATA_2 = ((PCM_frame_Payload[2]<<16) | (PCM_frame_Payload[3]));
 		
-		
-		
-		if ((Payload_frame_DATA_1 == PAYLOADIDLE0) && (Payload_frame_DATA_2 == PAYLOADIDLE1))//loop IDLE frame
+		if ((Payload_frame_DATA_1 == PAYLOADIDLE0) || (0x00000003 != (bunchofrandomstatusflags & 0x00000003)))
 		{
 			payload_tx_channel->dword[0] = PAYLOADIDLE0;
 			payload_tx_channel->dword[1] = PAYLOADIDLE1;
 			
 		}
-		else////PCM encryption Mic media data
+		else
 		{
-		
-			//if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))//加密发送
-			{//发送方加密
+			
+			//logFromISR("\n\r MMQ:%X \n\r", Payload_frame_DATA_1);
+			//else////PCM encryption Mic media data
+			{
+				
+				//if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))//加密发送
+				//发送方加密				
+					//头和尾数据不变
+					
+					if ( ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD2000) || ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD1000)
+					|| ((Payload_frame_DATA_1 & 0xFFFF0000) == 0x00BA0000) || ((Payload_frame_DATA_1 & 0x0000FFFF) == 0x000000BA)
+					|| ((Payload_frame_DATA_2 & 0xFFFF0000) == 0x00BA0000) || ((Payload_frame_DATA_2 & 0x0000FFFF) == 0x000000BA) )//header terminator
+					{
+				
+							//logFromISR("\n\r MMQ:%X \n\r", Payload_frame_DATA_1);
+							
+							payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+							payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+	
+					}
+					//中间数据
+					else//PCM encryption
+					{
+						//(Tone_flag == 1) 
+						//logFromISR("\n\r MMQ:%X \n\r", Payload_frame_DATA_1);
+						if (Silent_flag)
+						{
+							//logFromISR("\n\r MMQ:%X \n\r", Payload_frame_DATA_1);
+							payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+							payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+						}
 						
-				if ( ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD2000)
-				|| ((Payload_frame_DATA_1 & 0xFFFF0000) == 0x00BA0000) || ((Payload_frame_DATA_1 & 0x0000FFFF) == 0x000000BA)
-				|| ((Payload_frame_DATA_1 & 0xFFFFF000) == 0xABCD1000))
-				{
-			
-				
-					payload_tx_channel->dword[0] = Payload_frame_DATA_1;
-					payload_tx_channel->dword[1] = Payload_frame_DATA_2;
-				
-				}
-				else//PCM encryption
-				{
-					if (Silent_flag)
-					{
-						payload_tx_channel->dword[0] = Payload_frame_DATA_1;
-						payload_tx_channel->dword[1] = Payload_frame_DATA_2;
-
+						else
+						{
+							//if(0x00000003 == (bunchofrandomstatusflags & 0x00000003))
+							{
+								//logFromISR("\n\r XXQ:%X \n\r", Payload_frame_DATA_1);
+								payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
+								payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
+								payload_tx_channel->word[2] = (PCM_frame_Payload[2] );//^ Public_PCMkey);
+								payload_tx_channel->word[3] = (PCM_frame_Payload[3] );//^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
+							}
+							//else
+							//{
+								//
+								//payload_tx_channel->dword[0] = PAYLOADIDLE0;
+								//payload_tx_channel->dword[1] = PAYLOADIDLE1;
+								//
+							//}
+							
+							
+						}
 					}
-					else
-					{
-				
-						payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
-						payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
-						payload_tx_channel->word[2] = (PCM_frame_Payload[2] ^ Public_PCMkey);
-						payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
-				
-					}
-				}
 			}
-			
-			//else if ((Radio_Transmit_State == 0) && (Speaker_is_unmute == 1))//解密回发
-			//{
-				
-				//if ((Payload_frame_DATA_1 == 0xABCD11fe) || (Payload_frame_DATA_1 == 0xABCD1346)
-				//|| (Payload_frame_DATA_1 == 0x00ba000) )
-				//{
-					//
-					//payload_tx_channel->dword[0] = Payload_frame_DATA_1;
-					//payload_tx_channel->dword[1] = Payload_frame_DATA_2;
-					//
-					////payload_tx_channel->word[0] = PCM_frame_Payload[0];
-					////payload_tx_channel->word[1] = PCM_frame_Payload[1];
-					////payload_tx_channel->word[2] = PCM_frame_Payload[2];
-					////payload_tx_channel->word[3] = PCM_frame_Payload[3];
-				//}
-				//else//PCM decoding
-				//{
-					//if (Silent_flag)
-					//{
-						//payload_tx_channel->dword[0] = Payload_frame_DATA_1;
-						//payload_tx_channel->dword[1] = Payload_frame_DATA_2;
-					//}
-					//else
-					//{
-						//
-						//payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
-						//payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
-						//payload_tx_channel->word[2] = (PCM_frame_Payload[2]);
-						//payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//解密
-						//
-					//}
-				//}
-				
-				
-			//}
-			//
-			//else
-			//{
-				//
-			//
-				//payload_tx_channel->dword[0] = PAYLOADIDLE0;
-				//payload_tx_channel->dword[1] = PAYLOADIDLE1;
-			//}
-
-		
-			//PCM encryption
-			////if ((PCM_frame_Payload[0] == 0xABCD) && ((PCM_frame_Payload[1] = 0x21FE ) ||(PCM_frame_Payload[1] = 0x2146)))
-			//{
-				//if ((Silent_flag == 0) && (PCM_frame_Payload[2] !=0x0000) && (PCM_frame_Payload[3] !=0x0000))
-				//{
-					////payload_tx_channel->word[2] = ((PCM_frame_Payload[2]) ^ Public_PCMkey);
-					//payload_tx_channel->word[3] = ((PCM_frame_Payload[3]) ^ Public_PCMkey);
-				//}	
-				//else
-				//{
-				//
-					//
-					////payload_tx_channel->word[2] = PCM_frame_Payload[2];
-					//payload_tx_channel->word[3] = PCM_frame_Payload[3];
-				//}
-			//
-			//}
-		
 		}
 	}
 
@@ -1952,21 +1910,25 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				
 				switch (ArrayDiscLength){
 					case 0:          //The usual case. Remaining word in Phy buffer is Audio.
-								
-						payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
-						RxMedia_IsFillingNext16 += 1;
-						if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
-						{
-							RxMedia_IsFillingNext16 = 0;	
-							payload_rx(payload_ptr);	
-							payload_ptr = get_payload_idle_isr();
-							if(NULL == payload_ptr)
+							
+							Terminator_Flag = 0;
+							Silent_flag = 0;
+							Tone_flag = 0;
+							
+							payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
+							RxMedia_IsFillingNext16 += 1;
+							if (RxMedia_IsFillingNext16 >= MAX_PAYLOAD_BUFF_SIZE)
 							{
-								break;
-							}				
-						}
+								RxMedia_IsFillingNext16 = 0;
+								payload_rx(payload_ptr);
+								payload_ptr = get_payload_idle_isr();
+								if(NULL == payload_ptr)
+								{
+									break;
+								}
+							}
 							RxMediaState = READINGMEDIA;
-					break;
+						break;
 				
 					case 1: //The next usual case.
 							//In general case, add code to process single word Array descriptor.
@@ -1982,24 +1944,33 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							}
 							else if (payload_rx_channel->word[3] == 0x1026)//Tone Descriptor
 							{
-								//Tone_flag = 1;
+								
+								Tone_flag = 1;
+								Tone_Counters++;
+								RxMediaState = WAITINGABAB;
+								
+								break;	//Tone_flag = 1;//屏蔽掉此类型数据
 							
 							}
 							else
 							{
-								//Terminator_Flag = 0;
+								Terminator_Flag = 0;
+								Silent_flag = 0;
+								Tone_flag = 0;
+								
 							}
 					
 					
 							RxMediaState = READINGMEDIA;
-					break;
+						break;
 				
 					default: //So far, can't happen, but need to code anyway.
 							//In general, add code to process multi-word array descriptor.
 							//ArrayDiscLength -= 1;
 							//RxMediaState = READINGARRAYDISCRPT;
-					break;
+						break;
 					}
+					
 				break;
 				}
 		

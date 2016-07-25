@@ -430,7 +430,7 @@ void xcmp_audio_route_mic(void)
 	ptr->Function = Routing_Func_Update_Source;
 	
 	
-	unsigned short NumberofRoutings = 2;
+	unsigned short NumberofRoutings =2;
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] = NumberofRoutings & 0xFF;
 	
@@ -698,8 +698,6 @@ void xcmp_audio_route_speaker(void)
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
 		
-	
-	
 	
 	ptr->RoutingData[0].audioInput = IN_Pre_Speaker_Audio_Data;//IN_Pre_Speaker_Audio_Data;//IN_Microphone;//IN_Option_Board;
 	ptr->RoutingData[0].audioOutput = OUT_Option_Board;//OUT_Option_Board;//OUT_Microphone_Data;//≤‚ ‘

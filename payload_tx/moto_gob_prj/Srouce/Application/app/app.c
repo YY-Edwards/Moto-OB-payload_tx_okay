@@ -21,11 +21,12 @@ U32 bunchofrandomstatusflags;
 U8 Speaker_is_unmute = 0;
 U8 Silent_flag = 0;
 U8 Terminator_Flag = 0;
+U8 Tone_flag = 0;
 U8 AMBE_rx_flag = 0;
 U8 AMBE_tx_flag = 0;
 U8 Radio_Transmit_State = 0;// in standby or receive mode
 U8 Mic_is_Enabled = 0;
-
+volatile U32 Tone_Counters = 0;
 volatile U8 VF_SN = 0;
 
 /* Declare a variable that will be incremented by the hook function. */
@@ -283,6 +284,7 @@ void AudioRoutingControl_reply_func(xcmp_fragment_t * xcmp)
 		
 		log("AudioRouting OK");
 		xcmp_IdleTestTone();//提示通道配置成功
+		xcmp_IdleTestTone();
 		xcmp_IdleTestTone();
 		xcmp_IdleTestTone();
 		//is_unmute = 1;
@@ -830,6 +832,7 @@ static __app_Thread_(app_cfg)
 				else if(isAudioRouting == 2)
 				{
 					
+					//xcmp_transmit_control();
 					//xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();
@@ -858,14 +861,16 @@ static __app_Thread_(app_cfg)
 				}
 
 				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
-				//log("\n\r un: %d \n\r", is_unmute);
+				//log("\n\r Tone_flag: %d \n\r", Tone_flag);
+				//log("\n\r Tone_counters: %d \n\r", Tone_Counters);
+				//log("\n\r Silent_flag: %d \n\r", Silent_flag);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			
 				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);
-				
+
 				if(isAudioRouting  == 6)
 				{
 					//xcmp_audio_route_speaker();
