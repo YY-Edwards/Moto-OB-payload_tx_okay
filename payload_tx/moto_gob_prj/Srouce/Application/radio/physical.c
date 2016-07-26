@@ -1473,10 +1473,18 @@ else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 							//if(0x00000003 == (bunchofrandomstatusflags & 0x00000003))
 							{
 								//logFromISR("\n\r XXQ:%X \n\r", Payload_frame_DATA_1);
-								payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
-								payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
-								payload_tx_channel->word[2] = (PCM_frame_Payload[2] );//^ Public_PCMkey);
-								payload_tx_channel->word[3] = (PCM_frame_Payload[3] );//^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
+								if (Tone_flag)
+								{
+									payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+									payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+								}
+								else
+								{
+									payload_tx_channel->word[0] = (PCM_frame_Payload[0]);
+									payload_tx_channel->word[1] = (PCM_frame_Payload[1]);
+									payload_tx_channel->word[2] = (PCM_frame_Payload[2] ^ Public_PCMkey);
+									payload_tx_channel->word[3] = (PCM_frame_Payload[3] ^ Public_PCMkey);//加密方有bug,尝试用逻辑分析仪查看
+								}
 							}
 							//else
 							//{
@@ -1674,6 +1682,9 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			
 		
 			/****Note AMBE stream protocol frame structure and the PCM frame structure is different*****/
+#if 0
+
+
 					
 			if ((payload_rx_channel->dword[0] & 0x0000F000 ) == PAYLOAD_DATA_ENH )//PAYLOAD_DATA_ENH (0x0c))
 			{
@@ -1886,7 +1897,10 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			//}
 			
 			else//PCM-media-data
+			
+#endif			
 			{	
+				
 				//logFromISR("\n\r RX:%x \n\r", payload_rx_channel->dword[0]);
 				//SPEAKER_DATA or  //MIC_DATA
 				if (((payload_rx_channel->dword[0] & 0x0000F000 ) != SPEAKER_DATA ) 
@@ -1896,10 +1910,16 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					//{
 						//break;//65794的机器通道有问题
 					//}
+				//logFromISR("\n\r Axiba \n\r");
+				
 				AMBE_tx_flag = 0;
 				AMBE_rx_flag = 0;
 				
 				Item_ID = 0;//To make sure your save PCM data.
+				//if (payload_rx_channel->dword[0] == 0xABCD11FE)
+				//{
+					//logFromISR("\n\r Axiba:%X \n\r", payload_rx_channel->dword[1]);
+				//}
 				
 				if ((payload_rx_channel->dword[0]  & 0x00000F00) <= 1){  //Flag type must process Array Descriptor.
 				//The first word of the media access payload must be the Array descriptor length. And the
@@ -1907,13 +1927,21 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				//When there is no array descriptor, the length must be set to zero.[9.1.4.1]
 				if ((RxBytesWaiting -= 4) <= 0) break;          //Nothing beyond this Phy buffer. Keep looking for Header
 				ArrayDiscLength = payload_rx_channel->word[2];
+				       
+				if (ArrayDiscLength ==0 )
+				{ 
+					//logFromISR("\n\r Axiba \n\r");
+				}
 				
 				switch (ArrayDiscLength){
+					
 					case 0:          //The usual case. Remaining word in Phy buffer is Audio.
 							
 							Terminator_Flag = 0;
 							Silent_flag = 0;
 							Tone_flag = 0;
+							
+							//logFromISR("\n\r Axiba \n\r");
 							
 							payload_ptr[RxMedia_IsFillingNext16] = payload_rx_channel->word[3];
 							RxMedia_IsFillingNext16 += 1;
@@ -1927,7 +1955,9 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 									break;
 								}
 							}
-							RxMediaState = READINGMEDIA;
+							
+						RxMediaState = READINGMEDIA;
+							
 						break;
 				
 					case 1: //The next usual case.
@@ -2073,6 +2103,10 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				}
 			}
 			break; //End of READINGMEDIA.
+
+#if 0
+
+
 
 		case READING_AMBE_MEDIA:
 		
@@ -2614,7 +2648,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 		//}
 		//break;  //End of READINGARRAYDISCRPT.
 
-
+#endif
 
 		case BGFORCERESET: //Do nothing.
 		break;
