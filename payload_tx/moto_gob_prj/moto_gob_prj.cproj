@@ -333,6 +333,9 @@
     <Compile Include="Srouce\Application\radio\audio.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Srouce\Application\radio\PCM_encryption.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Srouce\Application\radio\physical.c">
       <SubType>compile</SubType>
     </Compile>

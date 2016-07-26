@@ -19,7 +19,8 @@ static __app_Thread_(app_cfg);
 U32 bunchofrandomstatusflags;
 
 U8 is_unmute = 0;
-U8 Silent_flag = 0;
+volatile U8 Silent_flag = 0;
+volatile U8 Tone_flag = 0 ;
 U8 Terminator_Flag = 0;
 U8 AMBE_rx_flag = 0;
 U8 AMBE_tx_flag = 0;
@@ -27,6 +28,7 @@ U8 Radio_Transmit_State = 0;// in standby or receive mode
 U8 Mic_is_Enabled = 0;
 
 volatile U8 VF_SN = 0;
+volatile U32 Tone_Counters = 0;
 
 /* Declare a variable that will be incremented by the hook function. */
 unsigned long ulIdleCycleCount = 0UL;
@@ -191,7 +193,7 @@ void spk_reply_func(xcmp_fragment_t * xcmp)
 		
 		if(xcmp->u8[4])
 		{
-			is_unmute = 1;
+			//is_unmute = 1;
 			
 			//Silent_flag = 1;
 		}
@@ -208,15 +210,15 @@ void spk_brdcst_func(xcmp_fragment_t * xcmp)
 {
 	if (xcmp->u8[3] == xcmp_Res_Success)//0x0000:mute
 	{
-		is_unmute =0;
-		Silent_flag = 0;
+		//is_unmute =0;
+		//Silent_flag = 0;
 		log("spk_s_close ");
 		
 		
 	}
 	else
 	{
-		Silent_flag = 1;
+		//Silent_flag = 1;
 		//is_unmute = 1;
 		log("spk_s_open ");
 	}
@@ -299,19 +301,19 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	//log("\n\r num_routings: %d \n\r", num_routings);
-	//
-	//for(j = 0; j< num_routings ; j++ )
-	//{
-		//
-		//
-		//log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
-		//log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
-		//
-		//
-	//}
-	//
-	//log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
+	log("\n\r num_routings: %d \n\r", num_routings);
+	
+	for(j = 0; j< num_routings ; j++ )
+	{
+		
+		
+		log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
+		log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
+		
+		
+	}
+	
+	log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
 	
 	
 	
@@ -742,7 +744,7 @@ static const volatile app_exec_t the_app_list[MAX_APP_FUNC]=
 
 void app_init(void)
 {	
-	//将app_payload_rx_proc更改为PCM加密功能
+	
 	payload_init( app_payload_rx_proc , app_payload_tx_proc );	
 	xcmp_register_app_list(the_app_list);
 			
@@ -790,9 +792,9 @@ static __app_Thread_(app_cfg)
 				if(isAudioRouting == 0)
 				{
 					//xcmp_data_session();
-					xcmp_audio_route_mic();
+					//xcmp_audio_route_mic();
 					//xcmp_button_config();
-					//xcmp_audio_route_speaker();
+					xcmp_audio_route_speaker();
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//is_unmute = 1;
@@ -849,7 +851,13 @@ static __app_Thread_(app_cfg)
 				//log("\n\r un: %d \n\r", is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
-			
+				
+				log("\n\r Tone_flag: %d \n\r", Tone_flag);
+				log("\n\r Terminator_Flag: %d \n\r", Terminator_Flag);
+				//Terminator_Flag
+				//log("\n\r Tone_counters: %d \n\r", Tone_Counters);
+				log("\n\r Silent_flag: %d \n\r", Silent_flag);
+				
 				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);

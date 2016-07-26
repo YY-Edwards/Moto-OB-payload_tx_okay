@@ -70,8 +70,9 @@ Srouce/Application/radio/physical.d Srouce/Application/radio/physical.o \
  ../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h \
  ../Srouce/Application/radio/ambe.h ../Srouce/Application/radio/ssc.h \
  ../Srouce/Application/radio/physical.h ../Srouce/Application/radio/xnl.h \
- ../Srouce/Application/radio/payload.h ../Srouce/Config/../log/log.h \
- ../Srouce/ASF/avr32/drivers/usart/usart.h
+ ../Srouce/Application/radio/payload.h \
+ ../Srouce/Application/radio/PCM_encryption.h \
+ ../Srouce/Config/../log/log.h ../Srouce/ASF/avr32/drivers/usart/usart.h
 
 d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h:
 
@@ -218,6 +219,8 @@ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bi
 ../Srouce/Application/radio/xnl.h:
 
 ../Srouce/Application/radio/payload.h:
+
+../Srouce/Application/radio/PCM_encryption.h:
 
 ../Srouce/Config/../log/log.h:
 
