@@ -771,7 +771,7 @@ void xcmp_audio_route_AMBE(void)
 	ptr->Function = Routing_Func_Update_Source;
 	
 	
-	unsigned short NumberofRoutings = 4;//2;
+	unsigned short NumberofRoutings = 6;//4;//2;
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
 	
@@ -782,15 +782,20 @@ void xcmp_audio_route_AMBE(void)
 	ptr->RoutingData[0].audioOutput = OUT_Option_Board;// OUT_Speaker;
 	ptr->RoutingData[1].audioInput = IN_Option_Board;//IN_Option_Board;
 	ptr->RoutingData[1].audioOutput = Post_AMBE_Encoder;// OUT_Speaker;
+	
+	ptr->RoutingData[2].audioInput = Pre_AMBE_Decoder;//IN_Option_Board;
+	ptr->RoutingData[2].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
+	ptr->RoutingData[3].audioOutput = Pre_AMBE_Decoder;// OUT_Speaker;
 
 	
-	ptr->RoutingData[2].audioInput = Tx_Voice_Header;//IN_Option_Board;
-	ptr->RoutingData[2].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	ptr->RoutingData[4].audioInput = Tx_Voice_Header;//IN_Option_Board;
+	ptr->RoutingData[4].audioOutput = OUT_Option_Board;// OUT_Speaker;
 	//ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
 	//ptr->RoutingData[3].audioOutput = Tx_Voice_Header;// OUT_Speaker;
 	
-	ptr->RoutingData[3].audioInput = Tx_Voice_Terminator;//IN_Option_Board;
-	ptr->RoutingData[3].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	ptr->RoutingData[5].audioInput = Tx_Voice_Terminator;//IN_Option_Board;
+	ptr->RoutingData[5].audioOutput = OUT_Option_Board;// OUT_Speaker;
 	//ptr->RoutingData[5].audioInput = IN_Option_Board;//IN_Option_Board;
 	//ptr->RoutingData[5].audioOutput = Tx_Voice_Terminator;// OUT_Speaker;
 	

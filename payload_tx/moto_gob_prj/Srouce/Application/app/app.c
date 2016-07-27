@@ -23,6 +23,7 @@ U8 Silent_flag = 0;
 U8 Terminator_Flag = 0;
 U8 AMBE_rx_flag = 0;
 U8 AMBE_tx_flag = 0;
+U8 AMBE_Media = 0;
 U8 Radio_Transmit_State = 0;// in standby or receive mode
 U8 Mic_is_Enabled = 0;
 
@@ -299,19 +300,19 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	//log("\n\r num_routings: %d \n\r", num_routings);
-	//
-	//for(j = 0; j< num_routings ; j++ )
-	//{
-		//
-		//
-		//log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
-		//log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
-		//
-		//
-	//}
-	//
-	//log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
+	log("\n\r num_routings: %d \n\r", num_routings);
+	
+	for(j = 0; j< num_routings ; j++ )
+	{
+		
+		
+		log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
+		log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
+		
+		
+	}
+	
+	log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
 	
 	
 	
@@ -790,10 +791,10 @@ static __app_Thread_(app_cfg)
 				if(isAudioRouting == 0)
 				{
 					//xcmp_data_session();
-					xcmp_audio_route_mic();
+					//xcmp_audio_route_mic();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
-					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
+					xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//is_unmute = 1;
 					//xcmp_function_mic();
@@ -806,7 +807,7 @@ static __app_Thread_(app_cfg)
 					//xcmp_data_session();
 				    //xcmp_transmit_control();
 					//xcmp_volume_control();
-					//xcmp_enter_enhanced_OB_mode();
+					xcmp_enter_enhanced_OB_mode();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
 					//xcmp_unmute_speaker();
@@ -818,7 +819,7 @@ static __app_Thread_(app_cfg)
 				else if(isAudioRouting == 2)
 				{
 					
-					//xcmp_exit_device_control_mode();
+					xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();
 					//xcmp_audio_route_speaker();
@@ -831,7 +832,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 3)
 				{
-					//xcmp_audio_route_AMBE();
+					xcmp_audio_route_AMBE();
 					//xcmp_unmute_speaker();
 					//xcmp_enter_device_control_mode();
 					//xcmp_exit_enhanced_OB_mode();
@@ -848,9 +849,10 @@ static __app_Thread_(app_cfg)
 				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
 				//log("\n\r un: %d \n\r", is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
-				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
+				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);			
 			
-				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
+				log("\n\r AMBE_Rx_flag: %d \n\r", AMBE_rx_flag);
+				log("\n\r AMBE_Tx_flag: %d \n\r", AMBE_tx_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
 				//log("\n\r time: %d \n\r", tc_tick);
 				
@@ -904,7 +906,7 @@ static void app_payload_rx_proc(void  * payload)
 	static  U8 times_counter = 0;
 	
 	times_counter++;
-	if (times_counter == 30)
+	if (times_counter == 3)
 	{
 		times_counter = 0 ;
 		log("\n\r w: \n\r");

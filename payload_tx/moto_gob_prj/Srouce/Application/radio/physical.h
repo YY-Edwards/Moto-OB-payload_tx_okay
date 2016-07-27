@@ -165,7 +165,7 @@ typedef enum {
 	  READINGMEDIA,
 	  READING_AMBE_AUX,
 	  READING_AMBE_MEDIA,
-	  BGFORCERESET
+	  BGFORCERESET,
   } RxMediaStates;  //enums are 32 bits.
   
   typedef enum {

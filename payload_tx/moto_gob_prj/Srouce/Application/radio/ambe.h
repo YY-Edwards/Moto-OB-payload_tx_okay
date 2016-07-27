@@ -19,7 +19,7 @@ volatile U16 AMBEBurst_rawdata[4];						//Radio shall send 20ms AMBE bits of Voi
 
 //volatile U16 *Radio_Internal_Data;
 volatile U16 Radio_Internal_Data[2];					//It carries some parameters required by radio.
-volatile U16 Soft_Decision_Value[4];					//The Soft Decision Value parameter carriers soft decode value of FEC decoding. When used
+volatile U16 Soft_Decision_Data[13];					//The Soft Decision Value parameter carriers soft decode value of FEC decoding. When used
 														//along with Pre-Voice Decoder Audio Data item, it matches the dedicated bits of Pre-Voice
 														//Decoder Audio Data for their soft decode value.
 

@@ -596,6 +596,7 @@ extern U8 Silent_flag;
 extern U8 Terminator_Flag;
 extern U8 AMBE_rx_flag;
 extern U8 AMBE_tx_flag;
+extern U8 AMBE_Media;
 extern U8 VF_SN ;
 extern U8 Burst_ID;
 
@@ -633,10 +634,9 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 	//static U16 pay[256];
 	
 	//Send-AMBE-data
-	if ((AMBE_tx_flag == TRUE) || (AMBE_rx_flag == TRUE))
+	if ((AMBE_Media == TRUE))
 	{
 		A_index = (A_index >=1456) ? 0 : A_index;
-
 	  //AMBE_flag
 		switch(AMBEpayload_tx_state)
 		{
@@ -662,7 +662,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					if (m_RxBurstType == RADIOINTERNAL)//解密数据
 					{
 						//0xABCDCO14
-						payload_tx_channel->dword[0] = DE_OB_PAYLOAD;//49bits
+						payload_tx_channel->dword[0] = DE_OB_PAYLOAD;//20bytes
 						//0x847F
 						payload_tx_channel->word[2] = RIP_PAYLOAD;
 						//0xxxxx
@@ -913,7 +913,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					payload_tx_channel->word[2]	= 0x0000 ;
 					payload_tx_channel->word[3]	= 0x0000 ;
 					
-					AMBEpayload_tx_state = AMBE_IDLE;
+					AMBEpayload_tx_state = AMBE_IDLE;  
 				
 				break;
 		
@@ -931,6 +931,11 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 
 	}//end of Send-AMBE-data
 
+	else
+	{
+		payload_tx_channel->dword[0] = PAYLOADIDLE0;
+		payload_tx_channel->dword[1] = PAYLOADIDLE1;
+	}
 #if 0
 else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 {
@@ -1147,7 +1152,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 
 #endif
 
-#if 1
+#if 0
 	
 	else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 	{
@@ -1472,7 +1477,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	static U32 RxBytesWaiting = 0;
 	static U32 ArrayDiscLength = 0;
 	
-	static U16 * payload_ptr = NULL;
+	//static U16 * payload_ptr = NULL;
 	static U8 * AMBE_payload_ptr = NULL;
 	
 	static Bool is_first = FALSE;
@@ -1480,6 +1485,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	volatile static U32	Item_Length = 0;
 	
 	static U8  HT_index = 0;
+	static U8 SDV_Index = 0;
 	
 	static U8 _flag = 1;//0xABCDC014时，_flag为0；
 						//0xABCDC010时，_flag为1；
@@ -1490,7 +1496,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 	
 	if(is_first == FALSE)
 	{
-		payload_ptr = get_payload_idle_isr();
+		//payload_ptr = get_payload_idle_isr();
 		AMBE_payload_ptr = get_payload_idle_isr();
 		is_first = TRUE;
 	}	
@@ -1554,12 +1560,12 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			
 			RxBytesWaiting = payload_rx_channel->dword[0] & 0x000000FF;
 		
-			if((NULL== payload_ptr) || (NULL== AMBE_payload_ptr))
+			if( (NULL== AMBE_payload_ptr))
 			{
-				payload_ptr = get_payload_idle_isr();
+				//payload_ptr = get_payload_idle_isr();
 				AMBE_payload_ptr = get_payload_idle_isr();
 				
-				if((NULL== payload_ptr) || (NULL== AMBE_payload_ptr))
+				if (NULL== AMBE_payload_ptr)
 				{
 					logFromISR("\n\r xxxxx_QQ_xxxxx \n\r");//测试是否有这种情况出现
 					break;
@@ -1571,6 +1577,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					
 			if ((payload_rx_channel->dword[0] & 0x0000F000 ) == PAYLOAD_DATA_ENH )//PAYLOAD_DATA_ENH (0x0c))
 			{
+				AMBE_Media = 1;	
 											
 				Item_ID = payload_rx_channel->byte[5];
 				
@@ -1641,7 +1648,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 								
 					case Radio_Internal_Parameter://0x7F
 							
-							logFromISR("\n\r Item_Length:%d\n\r", Item_Length);
+							//logFromISR("\n\r Item_Length:%d\n\r", Item_Length);
 							
 							if ((RxBytesWaiting -= 4) <= 0) break;
 							//Radio Internal Parameter
@@ -1688,9 +1695,18 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 									
 			
 				}
+				break;
 			}
+			
+			else
+			{
+				AMBE_Media = 0;	
+				break;
+			}
+			
 					
-				
+#if 0
+
 					//
 				////The OB know the Call begin and discard the Voice Header
 				////The OB know the Call end and discard the Voice  Terminator			
@@ -1778,7 +1794,13 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				//RxMediaState = READING_AMBE_MEDIA;//Jump
 		//
 			//}
-			
+	
+#endif	
+
+#if 0
+
+
+		
 			else//PCM-media-data
 			{	
 				//logFromISR("\n\r RX:%x \n\r", payload_rx_channel->dword[0]);
@@ -1950,6 +1972,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				}
 			}
 			break; //End of READINGMEDIA.
+#endif
 
 		case READING_AMBE_MEDIA:
 		
@@ -2356,6 +2379,23 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						break;
 
 					}
+					else if (Item_ID == Soft_Decision_Value)
+					{		
+						Soft_Decision_Data[SDV_Index]	  = payload_rx_channel->dword[0];
+						Soft_Decision_Data[SDV_Index+1]	  = payload_rx_channel->dword[1];
+						SDV_Index +=2;
+						
+						if ((RxBytesWaiting -= 8) <= 0)
+						{
+							
+							RxBytesWaiting = 0;
+							RxMediaState = WAITINGABAB;
+							break;
+							
+						}
+						break;
+						
+					}
 					
 					else
 					{
@@ -2393,6 +2433,15 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							RxBytesWaiting = ((payload_rx_channel->dword[1] & 0x00007F00) >>24);//Test calculations are correct; 8
 							AMBE_rx_flag = 1;//本地作为AMBE数据的解密方
 						}
+						else if (payload_rx_channel->byte[7] == Soft_Decision_Value)//0x13
+						{
+							Item_ID = Soft_Decision_Value;	
+							RxBytesWaiting = ((payload_rx_channel->dword[1] & 0x00007F00) >>24);//Test calculations are correct; 26
+						}
+						else
+						{//error
+								RxMediaState = WAITINGABAB;//Jump
+						}
 							
 						RxMediaState = READING_AMBE_MEDIA;//Jump
 					}
@@ -2411,6 +2460,8 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 		 
 			break;//End of READING_AMBE_AUX.
 		 
+#if 0
+
 		 
 		//case READINGARRAYDISCRPT:  //So far, this cannot happen, but needed for forward compatibility.
 		////Array descriptorLength is greater than 0 on entry here.
@@ -2492,7 +2543,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 		//break;  //End of READINGARRAYDISCRPT.
 
 
-
+#endif
 		case BGFORCERESET: //Do nothing.
 		break;
 	}//End of RxMedia Phy Handler.
