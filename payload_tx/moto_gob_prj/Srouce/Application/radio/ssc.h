@@ -36,12 +36,12 @@ idle frame
 
 #define EN_OB_PAYLOAD    (U32)0xABCDC00E
 
-#define DE_OB_PAYLOAD    (U32)0xABCDC014
+#define DE_OB_PAYLOAD    (U32)0xABCDC032
 
 #define ENCODER_PAYLOAD    (U16)0x88F2
 #define DECODER_PAYLOAD    (U16)0x88F3
 #define RIP_PAYLOAD		   (U16)0x847F//radio internal parameter
-#define SDV_PAYLOAD		   (U16)0x8813//soft decision value
+#define SDV_PAYLOAD		   (U16)0x9A13//soft decision value
 
 
 

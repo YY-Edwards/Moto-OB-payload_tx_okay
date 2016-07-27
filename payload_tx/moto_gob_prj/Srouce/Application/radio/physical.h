@@ -175,6 +175,7 @@ typedef enum {
 	  AMBE_EN_LAST,
 	  AMBE_DE_FIRST,
 	  AMBE_DE_SECOND,
+	  AMBE_DE_THIRD,
 	  AMBE_DE_LAST,  
 	   
    }AMBEPayloadTxStates; //enum are 32 bits.

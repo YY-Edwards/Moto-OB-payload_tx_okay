@@ -626,6 +626,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 	
 	static U32 index = 0;
 	static U32 A_index = 0;
+	static U32 Soft_index = 0;
+	
 	static U32 send_num = 0;
 	
 	static U32 i = 0;
@@ -661,8 +663,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					//assemble 3 items into 1 Command. Send it to Radio.
 					if (m_RxBurstType == RADIOINTERNAL)//解密数据
 					{
-						//0xABCDCO14
-						payload_tx_channel->dword[0] = DE_OB_PAYLOAD;//20bytes
+						//0xABCDCO32
+						payload_tx_channel->dword[0] = DE_OB_PAYLOAD;//50bytes
 						//0x847F
 						payload_tx_channel->word[2] = RIP_PAYLOAD;
 						//0xxxxx
@@ -814,7 +816,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					if ((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1) )
 					{
 						// Vocoder Bits Stream Parameter("E" flag = 1)
-						//0xF08x
+						//0xF0(8+)x
 						payload_tx_channel->word[2] = ((VBSP_data[1]) | (0x0080));
 					}
 					else
@@ -822,100 +824,114 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						payload_tx_channel->word[2] = (VBSP_data[1]) ;
 					
 					//0x88F3
-					payload_tx_channel->word[3] = DECODER_PAYLOAD;
+					payload_tx_channel->word[3] = SDV_PAYLOAD;
 		
 					AMBEpayload_tx_state = AMBE_DE_SECOND;
 					
 				break;
+			
 			case AMBE_DE_SECOND:
-					
-				switch (m_RxBurstType)//在发送函数中去做解密处理
-				{
-					case VOICEBURST_A:
-							if (VF_SN == 1)
-							{	
-								//Pick up public key
-								
-								AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
-								AMBE_DecryptionKey[1] = AMBEBurst_rawdata[1];
-								AMBE_DecryptionKey[2] = AMBEBurst_rawdata[2];
-								AMBE_DecryptionKey[3] = AMBEBurst_rawdata[3];
-								
-								//Post back data
-								payload_tx_channel->word[0] = AMBEBurst_rawdata[0] ;
-								payload_tx_channel->word[1] = AMBEBurst_rawdata[1] ;
-								payload_tx_channel->word[2] = AMBEBurst_rawdata[2] ;
-								payload_tx_channel->word[3] = AMBEBurst_rawdata[3] ;
-								
+					//Post back soft decision value data
+
+						payload_tx_channel->word[0] = Soft_Decision_Data[Soft_index] ;
+						payload_tx_channel->word[1] = Soft_Decision_Data[Soft_index+1] ;
+						payload_tx_channel->word[2] = Soft_Decision_Data[Soft_index+2] ;
+						payload_tx_channel->word[3] = Soft_Decision_Data[Soft_index+3] ;
+						Soft_index +=4;
+						
+						if (Soft_index == 12)
+						{
+							AMBEpayload_tx_state = AMBE_DE_THIRD;
+							//Soft_index = 0 ;
 							
-								//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
-								//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
-								//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];				
-								//logFromISR("\n\r MMQ \n\r");
-						
-							}
-							else//VF_SN==2/3
-							{
-								
-								
-						
-								//Decrypt AMBE data(XOR) 
-								//Recover data
-								payload_tx_channel->word[0] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
-								payload_tx_channel->word[1] = ((AMBE_DecryptionKey[1]) ^ (AMBEBurst_rawdata[1])) ;
-								payload_tx_channel->word[2] = ((AMBE_DecryptionKey[2]) ^ (AMBEBurst_rawdata[2])) ;
-								payload_tx_channel->word[3] = ((AMBE_DecryptionKey[3]) ^ (AMBEBurst_rawdata[3])) ;
-							
-								//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
-								//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
-								//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];
-							
-						
-							}
-					
-							AMBEpayload_tx_state = AMBE_DE_LAST;
-					
-						break;
-					
-					case VOICEBURST_B:
-					case VOICEBURST_C:	
-					case VOICEBURST_D:	
-					case VOICEBURST_E:
-					case VOICEBURST_F:
-						
-							//Encrypted AMBE data(XOR)
-						
-							//Decrypt AMBE data(XOR)
-							//Recover data
-							payload_tx_channel->word[0] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
-							payload_tx_channel->word[1] = ((AMBE_DecryptionKey[1]) ^ (AMBEBurst_rawdata[1])) ;
-							payload_tx_channel->word[2] = ((AMBE_DecryptionKey[2]) ^ (AMBEBurst_rawdata[2])) ;
-							payload_tx_channel->word[3] = ((AMBE_DecryptionKey[3]) ^ (AMBEBurst_rawdata[3])) ;
-						
-							AMBEpayload_tx_state = AMBE_DE_LAST;
+						}
+						else
+						AMBEpayload_tx_state = AMBE_DE_SECOND;
+			
+				break;	
 				
-						break;
-					default://This shouldn't happen, but must check;
+			case AMBE_DE_THIRD:
 					
-							payload_tx_channel->dword[0] = PAYLOADIDLE0;
-							payload_tx_channel->dword[1] = PAYLOADIDLE1;
-							AMBEpayload_tx_state = AMBE_IDLE;
 					
-						break;
-				}
+					payload_tx_channel->word[0] = Soft_Decision_Data[Soft_index] ;
+					Soft_index = 0 ;
+					payload_tx_channel->word[1] = 0x8003;
+					//0x88F3
+					payload_tx_channel->word[2] = DECODER_PAYLOAD;
+				
+					switch (m_RxBurstType)//在发送函数中去做解密处理
+					{
+						case VOICEBURST_A:
+								if (VF_SN == 1)
+								{	
+									//Pick up public key
+								
+									AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
+									//Post back data
+									payload_tx_channel->word[3] = AMBEBurst_rawdata[0] ;
+								
+							
+									//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
+									//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
+									//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];				
+									//logFromISR("\n\r MMQ \n\r");
+						
+								}
+								else//VF_SN==2/3
+								{
+										
+									//Decrypt AMBE data(XOR) 
+									//Recover data
+
+									payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+							
+									//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
+									//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
+									//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];
+							
+						
+								}
+					
+								AMBEpayload_tx_state = AMBE_DE_LAST;
+					
+							break;
+					
+						case VOICEBURST_B:
+						case VOICEBURST_C:	
+						case VOICEBURST_D:	
+						case VOICEBURST_E:
+						case VOICEBURST_F:
+						
+								//Encrypted AMBE data(XOR)
+						
+								//Decrypt AMBE data(XOR)
+								//Recover data
+								payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+						
+								AMBEpayload_tx_state = AMBE_DE_LAST;
+				
+							break;
+						default://This shouldn't happen, but must check;
+					
+								payload_tx_channel->dword[0] = PAYLOADIDLE0;
+								payload_tx_channel->dword[1] = PAYLOADIDLE1;
+								AMBEpayload_tx_state = AMBE_IDLE;
+					
+							break;
+					}
 		
-				break;
+					break;
 				
 			case AMBE_DE_LAST:
 				
-					payload_tx_channel->word[0]	= 0x00BA ;
-					payload_tx_channel->word[1]	= 0x0000 ;
-					payload_tx_channel->word[2]	= 0x0000 ;
-					payload_tx_channel->word[3]	= 0x0000 ;
+						payload_tx_channel->word[0]	= 0x00BA ;
+						payload_tx_channel->word[1]	= 0x0000 ;
+						payload_tx_channel->word[2]	= 0x0000 ;
+						payload_tx_channel->word[3]	= 0x0000 ;
 					
-					AMBEpayload_tx_state = AMBE_IDLE;  
+						AMBEpayload_tx_state = AMBE_IDLE;  
 				
-				break;
+					break;
 		
 			default:
 			
@@ -927,7 +943,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 			
 				
 		
-			}
+				}
 
 	}//end of Send-AMBE-data
 
@@ -1625,7 +1641,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							if ((RxBytesWaiting -= 4) <= 0) break;
 					
 							//Vocoder Bits Stream Parameter
-							VF_SN = payload_rx_channel->byte[7];//This parameter is very important to the loop back Radio, as a reference.
+							VF_SN = (payload_rx_channel->byte[7] & 0x1F);//This parameter is very important to the loop back Radio, as a reference.
 							
 							VBSP_data[0] = payload_rx_channel->word[2];
 							VBSP_data[1] = payload_rx_channel->word[3];
@@ -2207,18 +2223,17 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						
 								
 					}
-					else if (Item_ID == Pre_Voice_Decoder_Data)//bit0~bit63
+					else if (Item_ID == Pre_Voice_Decoder_Data)//bit16~bit63
 					{
 						//接收方的解压类型数据
 						//For looping back to Radio
-						AMBEBurst_rawdata[0] = payload_rx_channel->word[0];
-						AMBEBurst_rawdata[1] = payload_rx_channel->word[1];
-						AMBEBurst_rawdata[2] = payload_rx_channel->word[2];
-						AMBEBurst_rawdata[3] = payload_rx_channel->word[3];
+						AMBEBurst_rawdata[1] = payload_rx_channel->word[0];
+						AMBEBurst_rawdata[2] = payload_rx_channel->word[1];
+						AMBEBurst_rawdata[3] = payload_rx_channel->word[2];
 						
 						//To be tested. Also locally stored RAW-AMBER-DATA
 						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[0];//1
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[0];//3
 						RxAMBE_IsFillingNext8 += 1;
 						
 						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
@@ -2238,7 +2253,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						}
 						
 						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[1];//2
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[1];//4
 						RxAMBE_IsFillingNext8 += 1;
 						
 						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
@@ -2257,7 +2272,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							break;
 						}
 						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[2];//3
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[2];//5
 						RxAMBE_IsFillingNext8 += 1;
 						
 						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
@@ -2276,7 +2291,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							break;
 						}
 						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[3];//4
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[3];//6
 						RxAMBE_IsFillingNext8 += 1;
 						
 						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
@@ -2295,45 +2310,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							break;
 						}
 						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[4];//5
-						RxAMBE_IsFillingNext8 += 1;
-						
-						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
-						{
-							RxAMBE_IsFillingNext8 = 0;
-							payload_rx(AMBE_payload_ptr);
-							AMBE_payload_ptr = get_payload_idle_isr();
-							if(NULL == AMBE_payload_ptr)
-							{
-								RxMediaState = WAITINGABAB;
-								break;
-							}
-						}
-						if ((RxBytesWaiting -= 1) <= 0){
-							RxMediaState = WAITINGABAB;
-							break;
-						}
-						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[5];//6
-						RxAMBE_IsFillingNext8 += 1;
-						
-						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
-						{
-							RxAMBE_IsFillingNext8 = 0;
-							payload_rx(AMBE_payload_ptr);
-							AMBE_payload_ptr = get_payload_idle_isr();
-							if(NULL == AMBE_payload_ptr)
-							{
-								RxMediaState = WAITINGABAB;
-								break;
-							}
-						}
-						if ((RxBytesWaiting -= 1) <= 0){
-							RxMediaState = WAITINGABAB;
-							break;
-						}
-						
-						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[6];//7
+						AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[4];//7
 						RxAMBE_IsFillingNext8 += 1;
 						
 						if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
@@ -2380,20 +2357,76 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 
 					}
 					else if (Item_ID == Soft_Decision_Value)
-					{		
-						Soft_Decision_Data[SDV_Index]	  = payload_rx_channel->dword[0];
-						Soft_Decision_Data[SDV_Index+1]	  = payload_rx_channel->dword[1];
-						SDV_Index +=2;
-						
-						if ((RxBytesWaiting -= 8) <= 0)
+					{							
+						if (SDV_Index == 12)
 						{
+							Soft_Decision_Data[SDV_Index]= payload_rx_channel->word[0];
 							
-							RxBytesWaiting = 0;
+							SDV_Index = 0;
+								
+							if (payload_rx_channel->byte[5] == Pre_Voice_Decoder_Data )//0xF3
+							{
+									Item_ID = Pre_Voice_Decoder_Data;
+									RxBytesWaiting = (payload_rx_channel->byte[4] & 0x7F);//Test calculations are correct; 8
+									AMBE_rx_flag = 1;//本地作为AMBE数据的解密方
+		
+									AMBEBurst_rawdata[0] = payload_rx_channel->word[3];//用于解密的中间数据变量
+									
+									AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[6];//1
+									RxAMBE_IsFillingNext8 += 1;
+									
+									if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+									{
+										RxAMBE_IsFillingNext8 = 0;
+										payload_rx(AMBE_payload_ptr);
+										AMBE_payload_ptr = get_payload_idle_isr();
+										if(NULL == AMBE_payload_ptr)
+										{
+											RxMediaState = WAITINGABAB;
+											break;
+										}
+									}
+									if ((RxBytesWaiting -= 1) <= 0){
+										RxMediaState = WAITINGABAB;
+										break;
+									}
+									
+									AMBE_payload_ptr[RxAMBE_IsFillingNext8] = payload_rx_channel->byte[7];//2
+									RxAMBE_IsFillingNext8 += 1;
+									
+									if (RxAMBE_IsFillingNext8 >= (2*MAX_PAYLOAD_BUFF_SIZE))
+									{
+										RxAMBE_IsFillingNext8 = 0;
+										payload_rx(AMBE_payload_ptr);
+										AMBE_payload_ptr = get_payload_idle_isr();
+										if(NULL == AMBE_payload_ptr)
+										{
+											RxMediaState = WAITINGABAB;
+											break;
+										}
+									}
+									if ((RxBytesWaiting -= 1) <= 0){
+										RxMediaState = WAITINGABAB;
+										break;
+									}
+									
+							}
+							else
 							RxMediaState = WAITINGABAB;
-							break;
-							
+								
 						}
-						break;
+						else
+						{
+									
+							Soft_Decision_Data[SDV_Index]	  = payload_rx_channel->word[0];
+							Soft_Decision_Data[SDV_Index+1]	  = payload_rx_channel->word[1];
+							Soft_Decision_Data[SDV_Index+2]	  = payload_rx_channel->word[2];
+							Soft_Decision_Data[SDV_Index+3]	  = payload_rx_channel->word[3];
+							SDV_Index +=4;
+									
+						}
+							
+							break;
 						
 					}
 					
@@ -2420,20 +2453,16 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 					{
 						//Item_ID = Vocoder_Bit_Stream_Parameter;
 						//Vocoder Bits Stream Parameter
-						VF_SN = payload_rx_channel->byte[5];//This parameter is very important to the loop back Radio, as a reference.
+						//Its value ranges from 1 to 18 for one voice superframe contains 6 voice bursts
+						// and each burst contains 3 VFs.
+						VF_SN = (payload_rx_channel->byte[5] & 0x1F);//This parameter is very important to the loop back Radio, as a reference.
 							
 						VBSP_data[0] = payload_rx_channel->word[1];
 						VBSP_data[1] = payload_rx_channel->word[2];
 							
 						m_RxBurstType = CalculateBurst(VF_SN);
 						
-						if (payload_rx_channel->byte[7] == Pre_Voice_Decoder_Data)//0xF3
-						{
-							Item_ID = Pre_Voice_Decoder_Data;
-							RxBytesWaiting = ((payload_rx_channel->dword[1] & 0x00007F00) >>24);//Test calculations are correct; 8
-							AMBE_rx_flag = 1;//本地作为AMBE数据的解密方
-						}
-						else if (payload_rx_channel->byte[7] == Soft_Decision_Value)//0x13
+						if (payload_rx_channel->byte[7] == Soft_Decision_Value)//0x13
 						{
 							Item_ID = Soft_Decision_Value;	
 							RxBytesWaiting = ((payload_rx_channel->dword[1] & 0x00007F00) >>24);//Test calculations are correct; 26
