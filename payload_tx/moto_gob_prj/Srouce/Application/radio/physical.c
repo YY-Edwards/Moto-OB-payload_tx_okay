@@ -591,7 +591,7 @@ static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 extern char AMBE_AudioData[];
 extern char AudioData[];
 extern U16 Public_AMBEkey[];
-extern U8 is_unmute;
+extern U8 Speaker_is_unmute;
 extern U8 Silent_flag;
 extern U8 Terminator_Flag;
 extern U8 AMBE_rx_flag;
@@ -659,8 +659,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				else//加密和解密的激励类型
 				{
 					
-					//Radio Internal Parameter + Vocoder Bits Stream Parameter + 1st 20ms AMBE bits of Voice Burst A 
-					//assemble 3 items into 1 Command. Send it to Radio.
+					//Radio Internal Parameter + Vocoder Bits Stream Parameter + soft decision value + 1st 20ms AMBE bits of Voice Burst A 
+					//assemble 4 items into 1 Command. Send it to Radio.
 					if (m_RxBurstType == RADIOINTERNAL)//解密数据
 					{
 						//0xABCDCO32
@@ -672,7 +672,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						
 						AMBEpayload_tx_state = AMBE_DE_FIRST;
 					}
-					
+					//Vocoder Bits Stream Parameter + 1st 20ms AMBE bits of Voice Burst A 
+					//assemble 2 items into 1 Command. Send it to Radio.
 					else//加密数据
 					{
 	
@@ -687,6 +688,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					}
 
 				}
+				
 				break;
 			
 			case AMBE_EN_FIRST:
@@ -695,18 +697,18 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				//0x88F2
 				payload_tx_channel->word[0] = ENCODER_PAYLOAD;//49bits
 				
-				payload_tx_channel->word[1] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
-				A_index+=2;
+				//payload_tx_channel->word[1] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
+				//A_index+=2;
+				//
+				//payload_tx_channel->word[2] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
+				//A_index+=2;
+				//
+				//payload_tx_channel->word[3] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
+				//A_index+=2;
+				//
+				//AMBEpayload_tx_state = AMBE_EN_LAST;
 				
-				payload_tx_channel->word[2] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
-				A_index+=2;
-				
-				payload_tx_channel->word[3] = ((AMBE_AudioData[A_index]<<8) + AMBE_AudioData[A_index+1]) ;
-				A_index+=2;
-				
-				AMBEpayload_tx_state = AMBE_EN_LAST;
-				
-			/***
+			
 				switch (m_RxBurstType)//在发送函数中去做加密处理
 				{
 					case VOICEBURST_A:
@@ -742,7 +744,7 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						
 							}
 					
-							payload_tx_state = 2;
+							AMBEpayload_tx_state = AMBE_EN_LAST;
 					
 						break;
 					
@@ -761,26 +763,27 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 							payload_tx_channel->word[2] = ((Public_AMBEkey[1]) ^ (AMBEBurst_rawdata[1])) ;
 							payload_tx_channel->word[3] = ((Public_AMBEkey[2]) ^ (AMBEBurst_rawdata[2])) ;
 						
-							payload_tx_state = 2;
+							AMBEpayload_tx_state = AMBE_EN_LAST;
 				
 						break;
 					default://This shouldn't happen, but must check;
 					
 							payload_tx_channel->dword[0] = PAYLOADIDLE0;
 							payload_tx_channel->dword[1] = PAYLOADIDLE1;
-							payload_tx_state = 0;
+							
+							AMBEpayload_tx_state = AMBE_IDLE;
 					
 						break;
 				}
 		
 		
-		***/
+		
 		
 				break;
 			
 			case AMBE_EN_LAST:
 					
-					/***
+				
 					//Encrypted AMBE data(XOR)
 					//payload_tx_channel->word[0] = AMBEBurst_rawdata[3];
 				
@@ -789,14 +792,14 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						payload_tx_channel->word[0]	= ((Public_AMBEkey[3])) ;
 					}
 					else{
-					
+						
 						payload_tx_channel->word[0]	= ((Public_AMBEkey[3]) ^ (AMBEBurst_rawdata[3])) ;
-					
+						
 					}
 					
-					***/
-					payload_tx_channel->word[0] = ((AMBE_AudioData[A_index]<<8) + 0x00) ;//需要补充Pad_bits位
-					A_index+=1;
+					
+					//payload_tx_channel->word[0] = ((AMBE_AudioData[A_index]<<8) + 0x00) ;//需要补充Pad_bits位
+					//A_index+=1;
 					
 					payload_tx_channel->word[1]	= 0x00BA ; 
 					payload_tx_channel->word[2]	= 0x0000 ;
@@ -815,15 +818,15 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					
 					if ((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1) )
 					{
-						// Vocoder Bits Stream Parameter("E" flag = 1)
+						// Vocoder Bits Stream Parameter("E(bit8)" flag = 1)
 						//0xF0(8+)x
-						payload_tx_channel->word[2] = ((VBSP_data[1]) | (0x0080));
+						payload_tx_channel->word[2] = ((VBSP_data[1]) | (0x0100));
 					}
 					else
 						//0xF00x
 						payload_tx_channel->word[2] = (VBSP_data[1]) ;
 					
-					//0x88F3
+					//0x9A13
 					payload_tx_channel->word[3] = SDV_PAYLOAD;
 		
 					AMBEpayload_tx_state = AMBE_DE_SECOND;
@@ -852,9 +855,11 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				
 			case AMBE_DE_THIRD:
 					
-					
+					//0x xxxx
 					payload_tx_channel->word[0] = Soft_Decision_Data[Soft_index] ;
-					Soft_index = 0 ;
+					Soft_index = 0 ;//索引清零
+					
+					//0x8003 隔离符号？
 					payload_tx_channel->word[1] = 0x8003;
 					//0x88F3
 					payload_tx_channel->word[2] = DECODER_PAYLOAD;
@@ -865,30 +870,23 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 								if (VF_SN == 1)
 								{	
 									//Pick up public key
-								
 									AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
+									
 									//Post back data
 									payload_tx_channel->word[3] = AMBEBurst_rawdata[0] ;
 								
-							
-									//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
-									//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
-									//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];				
+									
 									//logFromISR("\n\r MMQ \n\r");
 						
 								}
 								else//VF_SN==2/3
-								{
-										
+								{	
 									//Decrypt AMBE data(XOR) 
 									//Recover data
 
-									payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
-							
-									//payload_tx_channel->word[1] = AMBEBurst_rawdata[0];
-									//payload_tx_channel->word[2] = AMBEBurst_rawdata[1];
-									//payload_tx_channel->word[3] = AMBEBurst_rawdata[2];
-							
+									//payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+									
+									payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
 						
 								}
 					
@@ -906,7 +904,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						
 								//Decrypt AMBE data(XOR)
 								//Recover data
-								payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+								//payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+								payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
 						
 								AMBEpayload_tx_state = AMBE_DE_LAST;
 				
@@ -924,14 +923,82 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 				
 			case AMBE_DE_LAST:
 				
-						payload_tx_channel->word[0]	= 0x00BA ;
-						payload_tx_channel->word[1]	= 0x0000 ;
-						payload_tx_channel->word[2]	= 0x0000 ;
-						payload_tx_channel->word[3]	= 0x0000 ;
-					
-						AMBEpayload_tx_state = AMBE_IDLE;  
-				
-					break;
+					switch (m_RxBurstType)//在发送函数中去做解密处理
+					{
+						case VOICEBURST_A:
+							if (VF_SN == 1)
+							{
+								//Pick up public key
+							
+								AMBE_DecryptionKey[1] = AMBEBurst_rawdata[1];
+								AMBE_DecryptionKey[2] = AMBEBurst_rawdata[2];
+								AMBE_DecryptionKey[3] = AMBEBurst_rawdata[3];
+							
+								//Post back data
+								payload_tx_channel->word[0] = AMBEBurst_rawdata[1] ;
+								payload_tx_channel->word[1] = AMBEBurst_rawdata[2] ;
+								payload_tx_channel->word[2] = AMBEBurst_rawdata[3] ;
+								payload_tx_channel->word[3] = 0x00BA ;
+							
+								//logFromISR("\n\r MMQ \n\r");
+							
+							}
+							else//VF_SN==2/3
+							{
+							
+								//Decrypt AMBE data(XOR)
+								//Recover data
+
+									//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
+									//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+									//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3] ^ AMBE_DecryptionKey[3]);
+									
+									payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
+									payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
+									payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]) ;
+									
+									payload_tx_channel->word[3] = 0x00BA ;
+							
+							
+							}
+						
+							AMBEpayload_tx_state = AMBE_IDLE;
+						
+						break;
+						
+						case VOICEBURST_B:
+						case VOICEBURST_C:
+						case VOICEBURST_D:
+						case VOICEBURST_E:
+						case VOICEBURST_F:
+						
+							//Encrypted AMBE data(XOR)
+						
+							//Decrypt AMBE data(XOR)
+							//Recover data
+							//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
+							//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+							//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3] ^ AMBE_DecryptionKey[3]);
+							
+							payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
+							payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
+							payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]) ;
+							
+							payload_tx_channel->word[3] = 0x00BA ;
+						
+							AMBEpayload_tx_state = AMBE_IDLE;
+						
+							break;
+						default://This shouldn't happen, but must check;
+						
+							payload_tx_channel->dword[0] = PAYLOADIDLE0;
+							payload_tx_channel->dword[1] = PAYLOADIDLE1;
+							AMBEpayload_tx_state = AMBE_IDLE;
+							
+							break;
+					}
+
+				break;
 		
 			default:
 			
@@ -958,7 +1025,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 	
 	index = (index >=30240) ? 0 : index;
 	
-	if(is_unmute == 1)counter++;
+	if(Speaker_is_unmute == 1)counter++;
 	
 	switch(payload_tx_state)
 	{
@@ -967,7 +1034,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 			payload_tx_channel->dword[0] = PAYLOADIDLE0;
 			payload_tx_channel->dword[1] = PAYLOADIDLE1;
 		
-			if(((counter % 20 )== 0) && (counter != 0) &&(is_unmute == 1))//20*125us = 2.5ms.
+			if(((counter % 20 )== 0) && (counter != 0) &&(Speaker_is_unmute == 1))//20*125us = 2.5ms.
 			{
 				payload_tx_state = 1;
 				//payload_tx_state = 0;
@@ -1008,7 +1075,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 			//if((send_num == 1) && (last_frame == FALSE) )
 			//if((send_num == 15) && (last_frame == FALSE) )
 			//{
-			////is_unmute = 0;//提示mute,并退出
+			////Speaker_is_unmute = 0;//提示mute,并退出
 			//if (Silent_flag == 1)//发送静音指令
 			//{
 			//
@@ -1249,7 +1316,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				//if((send_num == 1) && (last_frame == FALSE) )
 				//if((send_num == 15) && (last_frame == FALSE) )
 				//{
-				////is_unmute = 0;//提示mute,并退出
+				////Speaker_is_unmute = 0;//提示mute,并退出
 				//if (Silent_flag == 1)//发送静音指令
 				//{
 				//

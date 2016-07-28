@@ -749,16 +749,9 @@ void xcmp_audio_route_revert(void)
 }
 
 
-
-/**
-Function: xcmp_audio_route_AMBE
-Parameters:
-Description: send tone request to test
-Calls: xcmp_tx
-Called By:...
-*/
 void xcmp_audio_route_AMBE(void)
 {
+
 	/*xcmp frame will be sent*/
 	xcmp_fragment_t xcmp_farme;
 	
@@ -771,7 +764,7 @@ void xcmp_audio_route_AMBE(void)
 	ptr->Function = Routing_Func_Update_Source;
 	
 	
-	unsigned short NumberofRoutings = 6;//4;//2;
+	unsigned short NumberofRoutings = 6;// 4;//2;
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
 	
@@ -787,7 +780,6 @@ void xcmp_audio_route_AMBE(void)
 	ptr->RoutingData[2].audioOutput = OUT_Option_Board;// OUT_Speaker;
 	ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
 	ptr->RoutingData[3].audioOutput = Pre_AMBE_Decoder;// OUT_Speaker;
-
 	
 	ptr->RoutingData[4].audioInput = Tx_Voice_Header;//IN_Option_Board;
 	ptr->RoutingData[4].audioOutput = OUT_Option_Board;// OUT_Speaker;
@@ -796,6 +788,141 @@ void xcmp_audio_route_AMBE(void)
 	
 	ptr->RoutingData[5].audioInput = Tx_Voice_Terminator;//IN_Option_Board;
 	ptr->RoutingData[5].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//ptr->RoutingData[5].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[5].audioOutput = Tx_Voice_Terminator;// OUT_Speaker;
+	
+	//ptr->RoutingData[4].audioInput = IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[4].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	
+	//ptr->RoutingData[1].audioInput = Post_AMBE_Encoder;//IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//
+	//ptr->RoutingData[2].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[2].audioOutput = Post_AMBE_Encoder;// OUT_Speaker;
+	
+	//ptr->RoutingData[3].audioInput = Post_AMBE_Decoder;//IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = Post_AMBE_Decoder;// OUT_Speaker;
+	
+	//ptr->RoutingData[1].audioInput = IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Option_Board;//OUT_Microphone_Data;//测试
+	
+	//ptr->RoutingData[1].audioInput = IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Microphone_Data;//测试OUT_Speaker;//
+	
+	/*send xcmp frame*/
+	xcmp_tx( &xcmp_farme, sizeof(AudioRoutingControl_req_t) - (MAX_ROUTING_CTR - NumberofRoutings) * sizeof(RoutingData_t));
+
+	
+}
+
+
+/**
+Function: xcmp_audio_route_encoder_AMBE
+Parameters:
+Description: send tone request to test
+Calls: xcmp_tx
+Called By:...
+*/
+void xcmp_audio_route_encoder_AMBE(void)
+{
+	/*xcmp frame will be sent*/
+	xcmp_fragment_t xcmp_farme;
+	
+	/*insert XCMP opcode*/
+	xcmp_farme.xcmp_opcode = XCMP_REQUEST | AUDIO_ROUTING_CONTROL;
+	
+	/*point to xcmp payload*/
+	AudioRoutingControl_req_t * ptr = (AudioRoutingControl_req_t *)xcmp_farme.u8;
+	
+	ptr->Function = Routing_Func_Update_Source;
+	
+	
+	unsigned short NumberofRoutings =  4;//2;
+	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
+	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
+	
+	//ptr->RoutingData[0].audioInput = IN_Microphone;//Post_AMBE_Encoder;//IN_Pre_Speaker_Audio_Data;//IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[0].audioOutput = OUT_Option_Board;//Post_AMBE_Encoder;//OUT_Microphone_Data;//测试
+	//注意：经测试发现，这里的路径配置，需要特别注意先后顺序，否则会提示参数错误。
+	ptr->RoutingData[0].audioInput = Post_AMBE_Encoder;//IN_Option_Board;
+	ptr->RoutingData[0].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	ptr->RoutingData[1].audioInput = IN_Option_Board;//IN_Option_Board;
+	ptr->RoutingData[1].audioOutput = Post_AMBE_Encoder;// OUT_Speaker;
+	
+	ptr->RoutingData[2].audioInput = Tx_Voice_Header;//IN_Option_Board;
+	ptr->RoutingData[2].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = Tx_Voice_Header;// OUT_Speaker;
+	
+	ptr->RoutingData[3].audioInput = Tx_Voice_Terminator;//IN_Option_Board;
+	ptr->RoutingData[3].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//ptr->RoutingData[5].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[5].audioOutput = Tx_Voice_Terminator;// OUT_Speaker;
+	
+	//ptr->RoutingData[4].audioInput = IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[4].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	
+	//ptr->RoutingData[1].audioInput = Post_AMBE_Encoder;//IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//
+	//ptr->RoutingData[2].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[2].audioOutput = Post_AMBE_Encoder;// OUT_Speaker;
+	
+	//ptr->RoutingData[3].audioInput = Post_AMBE_Decoder;//IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = Post_AMBE_Decoder;// OUT_Speaker;
+	
+	//ptr->RoutingData[1].audioInput = IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Option_Board;//OUT_Microphone_Data;//测试
+	
+	//ptr->RoutingData[1].audioInput = IN_Option_Board;
+	//ptr->RoutingData[1].audioOutput = OUT_Microphone_Data;//测试OUT_Speaker;//
+	
+	/*send xcmp frame*/
+	xcmp_tx( &xcmp_farme, sizeof(AudioRoutingControl_req_t) - (MAX_ROUTING_CTR - NumberofRoutings) * sizeof(RoutingData_t));
+}
+
+/**
+Function: xcmp_audio_route_decoder_AMBE
+Parameters:
+Description: send tone request to test
+Calls: xcmp_tx
+Called By:...
+*/
+void xcmp_audio_route_decoder_AMBE(void)
+{
+	/*xcmp frame will be sent*/
+	xcmp_fragment_t xcmp_farme;
+	
+	/*insert XCMP opcode*/
+	xcmp_farme.xcmp_opcode = XCMP_REQUEST | AUDIO_ROUTING_CONTROL;
+	
+	/*point to xcmp payload*/
+	AudioRoutingControl_req_t * ptr = (AudioRoutingControl_req_t *)xcmp_farme.u8;
+	
+	ptr->Function = Routing_Func_Update_Source;
+	
+	
+	unsigned short NumberofRoutings = 4;//2;
+	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
+	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
+	
+	//ptr->RoutingData[0].audioInput = IN_Microphone;//Post_AMBE_Encoder;//IN_Pre_Speaker_Audio_Data;//IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[0].audioOutput = OUT_Option_Board;//Post_AMBE_Encoder;//OUT_Microphone_Data;//测试
+	//注意：经测试发现，这里的路径配置，需要特别注意先后顺序，否则会提示参数错误。
+	
+	ptr->RoutingData[0].audioInput = Pre_AMBE_Decoder;//IN_Option_Board;
+	ptr->RoutingData[0].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	ptr->RoutingData[1].audioInput = IN_Option_Board;//IN_Option_Board;
+	ptr->RoutingData[1].audioOutput = Pre_AMBE_Decoder;// OUT_Speaker;
+
+	
+	ptr->RoutingData[2].audioInput = Tx_Voice_Header;//IN_Option_Board;
+	ptr->RoutingData[2].audioOutput = OUT_Option_Board;// OUT_Speaker;
+	//ptr->RoutingData[3].audioInput = IN_Option_Board;//IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = Tx_Voice_Header;// OUT_Speaker;
+	
+	ptr->RoutingData[3].audioInput = Tx_Voice_Terminator;//IN_Option_Board;
+	ptr->RoutingData[3].audioOutput = OUT_Option_Board;// OUT_Speaker;
 	//ptr->RoutingData[5].audioInput = IN_Option_Board;//IN_Option_Board;
 	//ptr->RoutingData[5].audioOutput = Tx_Voice_Terminator;// OUT_Speaker;
 	

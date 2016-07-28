@@ -1195,6 +1195,52 @@ typedef struct
 
 /*
 
+Call Control ----------------------------
+
+This command allows a device to request that a call be initiated, terminated, answered,
+rejected, or to obtain the status of a call. The remote address represents the target 
+address for encode or the source address for decode.
+
+*/
+//Call type
+
+#define NO_Call_Feature				 0x00
+#define Selective_call				0x01
+#define Call_Alert					0x02
+#define Enhanced_Private_call		 0x04
+#define Enhanced_Phone_call			0x05
+#define Group_Call					0x06
+#define Call_Alert_Voice			0x08
+#define Telegram_call				 0x09
+#define Group_Phone_call			0x0A
+#define Braoadcast_Call				0x0B
+
+//Call state
+
+#define Call_Decoded				 0x01
+#define Call_In_Progress			 0x02
+#define Call_Ended					 0x03
+#define Call_Initiated				0x04
+#define NO_ACK						0x06
+#define Call_In_Hangtime			 0x07
+#define Call_Decoded_Clear			0x08
+#define Call_Decoded_Key_Matched	0x09
+#define Call_Decoded_Key_Mismatched	0xA0
+
+
+typedef struct
+{
+	unsigned char Calltype;
+	unsigned char Callstate;
+	
+	//后面结构忽略
+	//unsigned char Remote_Address;
+	//unsigned char Group_ID_Information;
+	
+}CallControl_brdcst_t;
+
+/*
+
 Transmit Control ----------------------------
 
 This message is used to put the device in the Transmit mode or remove it from the
@@ -1247,6 +1293,9 @@ typedef struct
 	unsigned char State_change_reason;
 	
 }TransmitControl_brdcast_t;
+
+
+
 
 
 
@@ -1401,5 +1450,8 @@ void xcmp_button_config(void);
 void xcmp_volume_control(void);
 void xcmp_enter_enhanced_OB_mode(void);
 void xcmp_exit_enhanced_OB_mode(void);
+void xcmp_audio_route_encoder_AMBE(void);
+void xcmp_audio_route_decoder_AMBE(void);
 void xcmp_audio_route_AMBE(void);
+
 #endif /* XCMP_H_ */
