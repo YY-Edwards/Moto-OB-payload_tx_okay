@@ -310,7 +310,7 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	log("\n\r num_routings: %d \n\r", num_routings);
+	//log("\n\r num_routings: %d \n\r", num_routings);
 	
 	//for(j = 0; j< num_routings ; j++ )
 	//{
