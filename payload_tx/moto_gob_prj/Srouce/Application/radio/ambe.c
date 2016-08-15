@@ -6,6 +6,8 @@
  */ 
 #include "ambe.h"
 //Public_AMBEkey:encryption key
+//Note:
+//0x1949 is not used
 const U16 Public_AMBEkey[] ={0x1AC3, 0x1840 , 0xA380 , 0x1949};
 
 

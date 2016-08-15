@@ -785,17 +785,25 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 					
 				
 					//Encrypted AMBE data(XOR)
-					//payload_tx_channel->word[0] = AMBEBurst_rawdata[3];
+					//NOTE:
+					/*
+						There are 2 places we recommend to steal and insert the 3rd party inter-application data
+						  1:VF1 of first Burst A after last Voice Header (49 bits).
+						  2:Last 4 bits (bit 45 to bit 48) of every 49 bits AMBE Voice Frame. (72 bits@Super Frame).
+					
+					*/
+					
+					payload_tx_channel->word[0] = AMBEBurst_rawdata[3];
 				
-					if ((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1))
-					{
-						payload_tx_channel->word[0]	= ((Public_AMBEkey[3])) ;
-					}
-					else{
-						
-						payload_tx_channel->word[0]	= ((Public_AMBEkey[3]) ^ (AMBEBurst_rawdata[3])) ;
-						
-					}
+					//if ((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1))
+					//{
+						//payload_tx_channel->word[0]	= (Public_AMBEkey[3]) ;
+					//}
+					//else{
+						//
+						//payload_tx_channel->word[0]	= ((Public_AMBEkey[3]) ^ (AMBEBurst_rawdata[3])) ;
+						//
+					//}
 					
 					
 					//payload_tx_channel->word[0] = ((AMBE_AudioData[A_index]<<8) + 0x00) ;//需要补充Pad_bits位
@@ -869,14 +877,26 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						case VOICEBURST_A:
 								if (VF_SN == 1)
 								{	
-									//Pick up public key
-									AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
+									//if(AMBEBurst_rawdata[0] == Public_AMBEkey[0])//0X1AC3
+									{
+										
 									
-									//Post back data
-									payload_tx_channel->word[3] = AMBEBurst_rawdata[0] ;
-								
+										//Pick up public key
+										AMBE_DecryptionKey[0] = AMBEBurst_rawdata[0];
 									
-									//logFromISR("\n\r MMQ \n\r");
+										//Post back data
+										payload_tx_channel->word[3] = AMBEBurst_rawdata[0] ;
+									}
+									//else//干扰数据
+									//{
+										////logFromISR("\n\r MMQ：%x \n\r", AMBEBurst_rawdata[0]);
+										////Pick up public key
+										//AMBE_DecryptionKey[0] = Public_AMBEkey[0];
+										//
+										////Post back data
+										//payload_tx_channel->word[3] = Public_AMBEkey[0] ;
+										//
+									//}
 						
 								}
 								else//VF_SN==2/3
@@ -884,9 +904,9 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 									//Decrypt AMBE data(XOR) 
 									//Recover data
 
-									//payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+									payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
 									
-									payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
+									//payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
 						
 								}
 					
@@ -904,8 +924,8 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						
 								//Decrypt AMBE data(XOR)
 								//Recover data
-								//payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
-								payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
+								payload_tx_channel->word[3] = ((AMBE_DecryptionKey[0]) ^ (AMBEBurst_rawdata[0])) ;
+								//payload_tx_channel->word[3] = ((AMBEBurst_rawdata[0])) ;
 						
 								AMBEpayload_tx_state = AMBE_DE_LAST;
 				
@@ -928,18 +948,40 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						case VOICEBURST_A:
 							if (VF_SN == 1)
 							{
-								//Pick up public key
+								
+								//if(AMBEBurst_rawdata[1] == Public_AMBEkey[1])//0X1840
+								{
+								
+									//Pick up public key
 							
-								AMBE_DecryptionKey[1] = AMBEBurst_rawdata[1];
-								AMBE_DecryptionKey[2] = AMBEBurst_rawdata[2];
-								AMBE_DecryptionKey[3] = AMBEBurst_rawdata[3];
+									AMBE_DecryptionKey[1] = AMBEBurst_rawdata[1];
+									AMBE_DecryptionKey[2] = AMBEBurst_rawdata[2];
+									AMBE_DecryptionKey[3] = AMBEBurst_rawdata[3];
 							
-								//Post back data
-								payload_tx_channel->word[0] = AMBEBurst_rawdata[1] ;
-								payload_tx_channel->word[1] = AMBEBurst_rawdata[2] ;
-								payload_tx_channel->word[2] = AMBEBurst_rawdata[3] ;
-								payload_tx_channel->word[3] = 0x00BA ;
-							
+									//Post back data
+									payload_tx_channel->word[0] = AMBEBurst_rawdata[1] ;
+									payload_tx_channel->word[1] = AMBEBurst_rawdata[2] ;
+									payload_tx_channel->word[2] = AMBEBurst_rawdata[3] ;
+									payload_tx_channel->word[3] = 0x00BA ;
+								}
+								//else
+								//{
+									////Pick up public key
+									//
+									//AMBE_DecryptionKey[1] = Public_AMBEkey[1];
+									//AMBE_DecryptionKey[2] = Public_AMBEkey[2];
+									//AMBE_DecryptionKey[3] = Public_AMBEkey[3];
+									//
+									////Post back data
+									//payload_tx_channel->word[0] = Public_AMBEkey[1] ;
+									//payload_tx_channel->word[1] = Public_AMBEkey[2] ;
+									//payload_tx_channel->word[2] = Public_AMBEkey[3] ;
+									//payload_tx_channel->word[3] = 0x00BA ;
+									//
+									//
+									//
+									//
+								//}
 								//logFromISR("\n\r MMQ \n\r");
 							
 							}
@@ -949,13 +991,14 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 								//Decrypt AMBE data(XOR)
 								//Recover data
 
-									//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
-									//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+									payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
+									payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+									payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]);
 									//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3] ^ AMBE_DecryptionKey[3]);
 									
-									payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
-									payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
-									payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]) ;
+									//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
+									//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
+									//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]);
 									
 									payload_tx_channel->word[3] = 0x00BA ;
 							
@@ -976,13 +1019,14 @@ static void phy_payload_tx(payload_channel_t * payload_tx_channel)
 						
 							//Decrypt AMBE data(XOR)
 							//Recover data
-							//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
-							//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+							payload_tx_channel->word[0] = (AMBEBurst_rawdata[1] ^ AMBE_DecryptionKey[1]);
+							payload_tx_channel->word[1] = (AMBEBurst_rawdata[2] ^ AMBE_DecryptionKey[2]);
+							payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]);
 							//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3] ^ AMBE_DecryptionKey[3]);
 							
-							payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
-							payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
-							payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]) ;
+							//payload_tx_channel->word[0] = (AMBEBurst_rawdata[1]);
+							//payload_tx_channel->word[1] = (AMBEBurst_rawdata[2]);
+							//payload_tx_channel->word[2] = (AMBEBurst_rawdata[3]);
 							
 							payload_tx_channel->word[3] = 0x00BA ;
 						
@@ -2297,6 +2341,9 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						AMBEBurst_rawdata[1] = payload_rx_channel->word[0];
 						AMBEBurst_rawdata[2] = payload_rx_channel->word[1];
 						AMBEBurst_rawdata[3] = payload_rx_channel->word[2];
+						
+						//if((m_RxBurstType == VOICEBURST_A) && (VF_SN == 1))
+						//logFromISR("\n\r Pre_rx:%X\n\r", payload_rx_channel->word[2]);
 						
 						//To be tested. Also locally stored RAW-AMBER-DATA
 						

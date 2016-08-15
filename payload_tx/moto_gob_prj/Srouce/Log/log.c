@@ -265,8 +265,11 @@ int log(char * content, ...)
 	char * p = pvPortMalloc(length+1);
 	memcpy(p, logTmp, length+1);
 	//
-	//usart_write_line(EXAMPLE_USART, logTmp);
+	//usart_write_line(EXAMPLE_USART, logTmp)
+	
 	xQueueSend( logQueue, &p, 5);
+	
+	
 }
 	
 	
@@ -379,6 +382,8 @@ int logFromISR(char * content, ...)
 		//usart_write_line(EXAMPLE_USART, p);
 		//vPortFree(p);
 		xQueueSendFromISR( logQueue, &p, &xHigherPriorityTaskWoken );
+		
+		
 		//if (xHigherPriorityTaskWoken == pdTRUE)
 		//{
 			////taskYIELD();
