@@ -687,7 +687,7 @@ void xcmp_audio_route_speaker(void)
 	ptr->Function = Routing_Func_Update_Source;
 		
 		
-	unsigned short NumberofRoutings =  4;//2;
+	unsigned short NumberofRoutings =  2;
 	ptr->NumberofRoutings[0] = (NumberofRoutings >> 8) & 0xFF;
 	ptr->NumberofRoutings[1] =  NumberofRoutings & 0xFF;
 		
@@ -698,11 +698,11 @@ void xcmp_audio_route_speaker(void)
 	ptr->RoutingData[1].audioInput = IN_Option_Board;//IN_Option_Board;
 	ptr->RoutingData[1].audioOutput = OUT_Speaker;//OUT_Microphone_Data;//≤‚ ‘
 	
-	ptr->RoutingData[2].audioInput = IN_Microphone;//IN_Option_Board;
-	ptr->RoutingData[2].audioOutput =OUT_Option_Board;// OUT_Speaker;
-	
-	ptr->RoutingData[3].audioInput = IN_Option_Board;
-	ptr->RoutingData[3].audioOutput = OUT_Microphone_Data;//≤‚ ‘OUT_Speaker;//
+	//ptr->RoutingData[2].audioInput = IN_Microphone;//IN_Option_Board;
+	//ptr->RoutingData[2].audioOutput =OUT_Option_Board;// OUT_Speaker;
+	//
+	//ptr->RoutingData[3].audioInput = IN_Option_Board;
+	//ptr->RoutingData[3].audioOutput = OUT_Microphone_Data;//≤‚ ‘OUT_Speaker;//
 		
 	/*send xcmp frame*/
 	xcmp_tx( &xcmp_farme, sizeof(AudioRoutingControl_req_t) - (MAX_ROUTING_CTR - NumberofRoutings) * sizeof(RoutingData_t));

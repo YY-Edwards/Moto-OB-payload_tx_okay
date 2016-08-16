@@ -597,11 +597,17 @@ extern U16 Public_AMBEkey[];
 extern U8 is_unmute;
 extern volatile U8 Silent_flag;
 extern volatile U8 Tone_flag;
+
+
+extern volatile U8 Rx_Mic_data;
+extern volatile U8 Rx_Speaker_data;
+
 extern U8 Terminator_Flag;
 extern U8 AMBE_rx_flag;
 extern U8 AMBE_tx_flag;
 extern U8 VF_SN ;
 extern U8 Burst_ID;
+
 
 extern U8 Radio_Transmit_State;// in standby or receive mode
 extern U8 Mic_is_Enabled;
@@ -1158,12 +1164,15 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 
 #endif
 
-#if 0
+#if 1
 	
 	//else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 	{
 		
-		index = (index >=30240) ? 0 : index;
+		//index = (index >=30240) ? 0 : index;
+		
+		//Note:Test cycle sends 70 bytes of data
+		index = (index >=70) ? 0 : index;
 		
 		if((Radio_Transmit_State == 1) && (Mic_is_Enabled == 1))counter++;
 		
@@ -1322,8 +1331,8 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				}
 				else
 				{
-					payload_tx_channel->word[0] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
-					//payload_tx_channel->word[0] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+					//payload_tx_channel->word[0] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
+					payload_tx_channel->word[0] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 					index+=2;
 		
 				}
@@ -1345,8 +1354,8 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				}	
 				else
 				{
-					payload_tx_channel->word[1] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
-					//payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+					//payload_tx_channel->word[1] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
+					payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 					index+=2;
 				}
 				//payload_tx_channel->word[1] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
@@ -1367,8 +1376,8 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				}
 				else
 				{
-					payload_tx_channel->word[2] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
-					//payload_tx_channel->word[2] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+					//payload_tx_channel->word[2] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
+					payload_tx_channel->word[2] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 					//此处加密测试
 					//payload_tx_channel->word[2] =  (((AudioData[index]<<8 )+ AudioData[index+1] ) ^ Public_PCMkey);
 					index+=2;
@@ -1390,8 +1399,8 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 				}
 				else
 				{
-					payload_tx_channel->word[3] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
-					//payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
+					//payload_tx_channel->word[3] =  ((AudioData[index] )+ AudioData[index+1]<<8 );//高低换位
+					payload_tx_channel->word[3] =  ((AudioData[index]<<8 )+ AudioData[index+1] );
 					index+=2;
 				}
 	
@@ -1412,7 +1421,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 #endif
 
 	
-#if 1
+#if 0
 
 		//else//Send-PCM-data（注意测试回放时：数字信道码流为320bytes/20ms)
 	//	{
@@ -1421,6 +1430,13 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 			Payload_frame_DATA_1 = ((PCM_frame_Payload[0]<<16) | (PCM_frame_Payload[1]));
 			Payload_frame_DATA_2 = ((PCM_frame_Payload[2]<<16) | (PCM_frame_Payload[3]));
 			
+			payload_tx_channel->dword[0] = Payload_frame_DATA_1;
+			payload_tx_channel->dword[1] = Payload_frame_DATA_2;
+			
+			
+	#if 0
+
+	
 			if ((Payload_frame_DATA_1 == PAYLOADIDLE0) || (0x00000003 != (bunchofrandomstatusflags & 0x00000003)) || ((Tone_flag)))
 			{
 				payload_tx_channel->dword[0] = PAYLOADIDLE0;
@@ -1511,7 +1527,7 @@ else//Send-PCM-data（注意测试回放时：模拟信道码流为40bytes/2.5ms.）
 			}
 		//}
 
-
+#endif	
 
 #endif
 
@@ -1628,6 +1644,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 			
 			if (payload_rx_channel->dword[0] == 0xABCD5A5A)//Ignore Idles.
 			{
+							
 				m_RxBurstType = VOICE_WATING;
 				//Upon receiving the idle frame, the m Rx Burst Type into an idle state in order to transmit the synchronization wait
 				 break; 
@@ -1912,7 +1929,19 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 				//logFromISR("\n\r RX:%x \n\r", payload_rx_channel->dword[0]);
 				//SPEAKER_DATA or  //MIC_DATA
 				if (((payload_rx_channel->dword[0] & 0x0000F000 ) != SPEAKER_DATA ) 
-					&& ((payload_rx_channel->dword[0] & 0x0000F000 ) != MIC_DATA ))break;
+					&& ((payload_rx_channel->dword[0] & 0x0000F000 ) != MIC_DATA ))break;	
+				else
+					{
+						if ((payload_rx_channel->dword[0] & 0x0000F000 ) == MIC_DATA)
+						{
+							Rx_Mic_data = 1;
+						}
+						
+						if ((payload_rx_channel->dword[0] & 0x0000F000 ) == SPEAKER_DATA )
+						{
+							Rx_Speaker_data = 1;
+						}
+					}
 				
 				AMBE_tx_flag = 0;
 				AMBE_rx_flag = 0;
@@ -1965,6 +1994,8 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							if (payload_rx_channel->word[3] == 0x0003)//Stream Terminator
 							{
 								Terminator_Flag = 1;
+								Rx_Mic_data = 0;
+								Rx_Speaker_data = 0;
 
 							}
 							else if(payload_rx_channel->word[3] == 0x0004)//Silent Descriptor
@@ -1975,6 +2006,8 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 							else if (payload_rx_channel->word[3] == 0x1026)//Tone Descriptor
 							{
 								Tone_flag = 1;
+								Rx_Mic_data = 0;
+								Rx_Speaker_data = 0;
 								Tone_Counters++;
 								RxMediaState = WAITINGABAB;
 								break;

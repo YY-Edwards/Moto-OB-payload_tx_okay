@@ -27,6 +27,10 @@ U8 AMBE_tx_flag = 0;
 U8 Radio_Transmit_State = 0;// in standby or receive mode
 U8 Mic_is_Enabled = 0;
 
+volatile U8 Rx_Mic_data = 0;
+volatile U8 Rx_Speaker_data = 0;
+
+
 volatile U8 VF_SN = 0;
 volatile U32 Tone_Counters = 0;
 
@@ -301,19 +305,19 @@ void AudioRoutingControl_brdcst_func(xcmp_fragment_t * xcmp)
 	U8 j = 0 ;
 	
 	num_routings = ((xcmp->u8[0]<< 8) | (xcmp->u8[1]) );
-	log("\n\r num_routings: %d \n\r", num_routings);
-	
-	for(j = 0; j< num_routings ; j++ )
-	{
-		
-		
-		log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
-		log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
-		
-		
-	}
-	
-	log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
+	//log("\n\r num_routings: %d \n\r", num_routings);
+	//
+	//for(j = 0; j< num_routings ; j++ )
+	//{
+		//
+		//
+		//log("\n\r Audio-Input: %x \n\r", xcmp->u8[2+j*2]);
+		//log("\n\r Audio-Output: %x \n\r", xcmp->u8[3+j*2]);
+		//
+		//
+	//}
+	//
+	//log("\n\r Audio-Function: %x \n\r", xcmp->u8[3+j*2-1]);
 	
 	
 	
@@ -331,10 +335,10 @@ void TransmitControl_reply_func(xcmp_fragment_t * xcmp)
 	{
 		
 		log("\n\r  TransmitControl OK \n\r ");
-		log("\n\r Function: %x \n\r", ptr->Function);
-		log("\n\r Mode of Operation: %x \n\r", ptr->Mode_Of_Operation);
-		log("\n\r State: %x \n\r", ptr->State);
-		
+		//log("\n\r Function: %x \n\r", ptr->Function);
+		//log("\n\r Mode of Operation: %x \n\r", ptr->Mode_Of_Operation);
+		//log("\n\r State: %x \n\r", ptr->State);
+		//
 		if (ptr->Function == KEY_UP)
 		{
 			//is_unmute = 1;
@@ -792,9 +796,9 @@ static __app_Thread_(app_cfg)
 				if(isAudioRouting == 0)
 				{
 					//xcmp_data_session();
-					//xcmp_audio_route_mic();
+					xcmp_audio_route_mic();
 					//xcmp_button_config();
-					xcmp_audio_route_speaker();
+					//xcmp_audio_route_speaker();
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					//is_unmute = 1;
@@ -852,11 +856,20 @@ static __app_Thread_(app_cfg)
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 				
-				log("\n\r Tone_flag: %d \n\r", Tone_flag);
-				log("\n\r Terminator_Flag: %d \n\r", Terminator_Flag);
+				log("\r Tone_flag: %d \r", Tone_flag);
+				log("\r Terminator_Flag: %d \r", Terminator_Flag);
 				//Terminator_Flag
 				//log("\n\r Tone_counters: %d \n\r", Tone_Counters);
-				log("\n\r Silent_flag: %d \n\r", Silent_flag);
+				log("\r Silent_flag: %d \r", Silent_flag);
+				if (Rx_Mic_data)
+				{
+					log("\n\r OB Receive Mic Data \n\r");
+				}
+				if (Rx_Speaker_data)
+				{
+					log("\n\r OB Receive Speaker Data \n\r");
+				}
+							
 				
 				//log("\n\r AMBE_flag: %d \n\r", AMBE_flag);
 				//log("\n\r VF_SN: %x \n\r",  VF_SN);
