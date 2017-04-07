@@ -138,7 +138,7 @@ static void xcmp_exec_func(app_exec_t * exec, xcmp_fragment_t * xcmp)
 			else 
 			{
 				/*No function to register the request message*/
-				/*send not supported opcode to raido */
+				/*send not supported opcode to radio */
 				xcmp_opcode_not_supported();
 			}
 			break;
@@ -167,7 +167,7 @@ static void xcmp_exec_func(app_exec_t * exec, xcmp_fragment_t * xcmp)
 Function: xcmp_rx_process
 Parameters: void * pvParameters
 Description: receive and execute xcmp message
-Calls: xQueueReceive -- freerots
+Calls: xQueueReceive -- freertos
 	xcmp_exec_func
 Called By: task
 */
@@ -505,6 +505,22 @@ void xcmp_data_session(void)
 	/*point to xcmp payload*/
 	DataSession_req_t * ptr = (DataSession_req_t *)xcmp_farme.u8;
 	
+	//ptr->Function = Single_Data_Uint;//0x01
+	//
+	//ptr->DataDefinition.Data_Protocol_Version = TMP_Ver_1_1;//0x70
+	//
+	//ptr->DataDefinition.Dest_Address.Remote_Address_Type = Remote_IPV4_Address;//0x01
+	//
+	//ptr->DataDefinition.Dest_Address.Remote_Address_Size = Remote_IPV4_Address_Size;//0x03
+	//
+	//ptr->DataDefinition.Dest_Address.Remote_Address[0] = 0x0C;
+	//ptr->DataDefinition.Dest_Address.Remote_Address[1] = 0x01;
+	//ptr->DataDefinition.Dest_Address.Remote_Address[2] = 0x01;//ID:2
+	//ptr->DataDefinition.Dest_Address.Remote_Address[3] = 0x02;//ID:2
+	//
+	//ptr->DataDefinition.Dest_Address.Remote_Port_Com[0] = (Remote_Port >>8) & 0xFF;//0x00
+	//ptr->DataDefinition.Dest_Address.Remote_Port_Com[1] = Remote_Port & 0xFF;//0x00
+	
 	ptr->Function = Single_Data_Uint;//0x01
 	
 	ptr->DataDefinition.Data_Protocol_Version = DMR_CSBK_Data;//0x70
@@ -520,7 +536,20 @@ void xcmp_data_session(void)
 	ptr->DataDefinition.Dest_Address.Remote_Port_Com[0] = (Remote_Port >>8) & 0xFF;//0x00
 	ptr->DataDefinition.Dest_Address.Remote_Port_Com[1] = Remote_Port & 0xFF;//0x00
 	
-    
+    //ptr->DataPayload.Session_ID_Number = Session_ID;//0x00
+    //
+    //ptr->DataPayload.DataPayload_Length[0] =(6 >> 8) & 0xFF ;//可能会变化
+    //ptr->DataPayload.DataPayload_Length[1]= 6 & 0xFF  ;//可能会变化
+    //memcpy(ptr->DataPayload.DataPayload,"hello", 6);
+    ////for (i=0; i< sizeof(DataPayload) ; i++)
+    ////{
+	    ////
+	    ////ptr->DataPayload.DataPayload[i] = DataPayload[i];//长度计算了吗？
+	    ////
+    ////}
+	//
+	
+	//
 	ptr->DataPayload.Session_ID_Number = Session_ID;//0x00
 	
 	ptr->DataPayload.DataPayload_Length[0] =(sizeof(DataPayload) >> 8) & 0xFF ;//可能会变化

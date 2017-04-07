@@ -824,7 +824,7 @@ static __app_Thread_(app_cfg)
 			{
 				
 				// xcmp_audio_route_speaker();
-				//xcmp_IdleTestTone();
+				xcmp_IdleTestTone();
 				
 				//if (Terminator_Flag == 1)
 				//{
@@ -834,12 +834,12 @@ static __app_Thread_(app_cfg)
 				
 				if(isAudioRouting == 0)
 				{
-					//xcmp_data_session();
+					xcmp_data_session();
 					//xcmp_audio_route_mic();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
-					xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
-					xcmp_enter_enhanced_OB_mode();
+					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
+					//xcmp_enter_enhanced_OB_mode();
 					//xcmp_unmute_speaker();
 					//Speaker_is_unmute = 1;
 					//xcmp_function_mic();
@@ -848,8 +848,8 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 1)
 				{
-					xcmp_exit_device_control_mode();
-					xcmp_audio_route_AMBE();
+					//xcmp_exit_device_control_mode();
+					//xcmp_audio_route_AMBE();
 					//xcmp_function_mic();
 					//xcmp_data_session();
 				    //xcmp_transmit_control();
@@ -865,7 +865,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 2)
 				{
-					
+					xcmp_data_session();
 					//xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();

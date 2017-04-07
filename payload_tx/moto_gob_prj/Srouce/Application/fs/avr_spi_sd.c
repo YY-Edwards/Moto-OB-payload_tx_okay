@@ -842,14 +842,20 @@ SD_Error SD_GoIdleState(void)
   /* 将CS拉低 */
   SD_CS_LOW();
   
-  /* 发送CM0使SD卡进入SPI模式 */
-  SD_SendCmd(SD_CMD_GO_IDLE_STATE, 0, 0x95);
-  
-  /* 等到空闲状态下的回应等于0x01 */
-  if (SD_GetResponse  (SD_IN_IDLE_STATE))
+  while(1)//测试电流
   {
-	//printf("\n\r 没有检测到SD卡");
-    return SD_RESPONSE_FAILURE;
+  
+	  /* 发送CM0使SD卡进入SPI模式 */
+	  SD_SendCmd(SD_CMD_GO_IDLE_STATE, 0, 0x95);
+  
+	  /* 等到空闲状态下的回应等于0x01 */
+	  if (SD_GetResponse  (SD_IN_IDLE_STATE))
+	  {
+		//printf("\n\r 没有检测到SD卡");
+		return SD_RESPONSE_FAILURE;
+	  }
+	  
+	  
   }
 
   

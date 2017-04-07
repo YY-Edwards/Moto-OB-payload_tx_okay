@@ -934,7 +934,7 @@ An XCMP device can initiate multiple data sessions at one time.
 
 //#define  Remote_Address    (U32)0x000002
 
-#define  Remote_Port     (U16)0x0000
+#define  Remote_Port    0x4061//(U16)0x0000// 0X4061//
 
 //Data  payload
 //Session ID
@@ -954,6 +954,7 @@ typedef struct
 	U8 Remote_Address_Type;
 	U8 Remote_Address_Size;
 	U8 Remote_Address[3];
+	//U8 Remote_Address[4];
 	U8 Remote_Port_Com[2];   
 }Dest_Address_t;
 
@@ -968,7 +969,9 @@ typedef struct
 {
 	U8 Session_ID_Number;
 	U8 DataPayload_Length[2];
+	//U8 DataPayload[6];
 	U8 DataPayload[20];
+	
 }DataPayload_t;
 
 #pragma pack(1)
