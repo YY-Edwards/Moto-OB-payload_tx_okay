@@ -2,9 +2,9 @@
 Copyright (C), Jihua Information Tech. Co., Ltd.
 
 File name: ssc.c
-Author: wxj
-Version: 1.0.0.01
-Date: 22016/3/15 14:20:51
+Author: Edwards
+Version: 1.0.2.1
+Date: 2017/03/15 14:20:51
 
 Description:
 History:
@@ -25,8 +25,9 @@ History:
 #include "Log/log.h"
 #include "Radio/xcmp.h"
 
-#include "fs/fs.h"
+//#include "fs/fs.h"
 #include "rtc/rtc.h"
+#include "data_flash/data_flash.h"
 
 int main(void)
 {
@@ -41,7 +42,9 @@ int main(void)
 	INTC_init_interrupts();
 	
 	log_init();		
-	log("----start debug----");	
+	log("----start debug£¬ yoyo----");	
+	
+	data_flash_init();
 		
 	//rtc_init();
 	

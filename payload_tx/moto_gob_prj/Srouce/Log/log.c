@@ -131,7 +131,7 @@ void log_init(void)
 	sizeof(USART_GPIO_MAP) / sizeof(USART_GPIO_MAP[0]));
 
 	// Initialize USART in RS232 mode.
-	usart_init_rs232(EXAMPLE_USART, &USART_OPTIONS, EXAMPLE_TARGET_PBACLK_FREQ_HZ);			
+	usart_init_rs232(EXAMPLE_USART, &USART_OPTIONS, EXAMPLE_TARGET_PBACLK_FREQ_HZ);		
 			
 	logQueue  = xQueueCreate(50, sizeof(char *));
 	
