@@ -12,7 +12,7 @@
 //#include "atadrive.h"	/* Example: Header file of existing ATA harddisk control module */
 //#include "sdcard.h"		/* Example: Header file of existing MMC/SDC contorl module */
 #include "fs/mal_sd.h"		/* Example: MMC/SDC contorl */
-#include "fs/avr_spi_sd.h"
+//#include "fs/avr_spi_sd.h"
 #include "rtc/rtc.h"
 
 
@@ -269,12 +269,13 @@ DRESULT disk_ioctl (
 	 
 			/* 拉高CS */
 			//SD_CS_HIGH();
+			res = RES_OK;
 	  
 			break;
 	  
 		case GET_SECTOR_SIZE:
 		
-			*(WORD*)buff = 512;
+			*(WORD*)buff = 4096;//512;//根据AT25DF641的最小擦除单位为基准
 		
 			res = RES_OK;
 		
@@ -282,7 +283,7 @@ DRESULT disk_ioctl (
 		
 		case GET_BLOCK_SIZE:
 		
-			*(WORD*)buff = 512;
+			*(WORD*)buff = 4096;
 		
 			res = RES_OK;
 		
@@ -290,7 +291,7 @@ DRESULT disk_ioctl (
 		
 		case GET_SECTOR_COUNT:
 		
-			*(DWORD*)buff = SD_GetSectorCount();
+			*(DWORD*)buff = 2048;//SD_GetSectorCount();8192x1024/4096byte = 2048
 			//*(DWORD*)buff = 1024;
 		
 			res = RES_OK;

@@ -20,7 +20,8 @@ TIME.
 
 /* Includes ------------------------------------------------------------------*/
 #include "mal_sd.h"
-#include "avr_spi_sd.h"
+//#include "avr_spi_sd.h"
+#include "data_flash.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -227,26 +228,41 @@ MAL_ErrorStarus MAL_ReadData(void * readBuff,uint32_t blockAddr,  uint32_t numBy
 
 MAL_ErrorStarus MAL_ReadDisk(void *readbuff, uint32_t sector, uint32_t blockByteSize, uint8_t count)
 {
+	uint8_t ret =0;
 	
-	
-	if(count == 1)
+	if(!count)return PARERR_ERR;
+	for(; count > 0 ; count--)
 	{
-		
-		if(SD_ReadBlock(readbuff, (sector*BLOCK_BYTE_SIZE), blockByteSize)==SD_RESPONSE_NO_ERROR)//¶Á1¿é
-		
-		return READ_DATA_SUCCESS;
-		
+		ret = data_flash_read_block((sector*BLOCK_BYTE_SIZE), blockByteSize, readbuff);
+		if(ret != DF_OK)
+		{
+			return READ_DATA_ERR
+		}
+		sector++;
+		readbuff+=BLOCK_BYTE_SIZE;
 	}
-	else
-	{
-		
-		if(SD_ReadMultiBlocks(readbuff, (sector*BLOCK_BYTE_SIZE), blockByteSize, count)==SD_RESPONSE_NO_ERROR)
-		
-		return READ_DATA_SUCCESS;
-
-	}
+	return READ_DATA_SUCCESS;
 	
-	return READ_DATA_ERR;
+	
+	
+	//if(count == 1)
+	//{
+		//
+		//if(SD_ReadBlock(readbuff, (sector*BLOCK_BYTE_SIZE), blockByteSize)==SD_RESPONSE_NO_ERROR)//¶Á1¿é
+		//
+		//return READ_DATA_SUCCESS;
+		//
+	//}
+	//else
+	//{
+		//
+		//if(SD_ReadMultiBlocks(readbuff, (sector*BLOCK_BYTE_SIZE), blockByteSize, count)==SD_RESPONSE_NO_ERROR)
+		//
+		//return READ_DATA_SUCCESS;
+//
+	//}
+	
+	//return READ_DATA_ERR;
 	
 		
 	
@@ -269,27 +285,47 @@ MAL_ErrorStarus MAL_ReadDisk(void *readbuff, uint32_t sector, uint32_t blockByte
 
 MAL_ErrorStarus MAL_WriteDisk(void *writebuff, uint32_t sector, uint32_t blockByteSize, uint8_t count)
 {
+	uint8_t ret =0;
 	
-	
-	if(count == 1)
+	if(!count)return PARERR_ERR;
+	for(; count > 0 ; count--)
 	{
+		ret = data_flash_erase_block((sector*BLOCK_BYTE_SIZE), DF_BLOCK_4KB);
+		if(ret != DF_ERASE_COMPLETED)
+		{
+			return WRITE_DATA_ERR
+		}
 		
-		if(SD_WriteBlock(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize)==SD_RESPONSE_NO_ERROR)//¶Á1¿é
-		
-		return WRITE_DATA_SUCCESS;
-		
+		ret	= data_flash_write_block(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize,);
+		if(ret != DF_WRITE_COMPLETED)
+		{
+			return WRITE_DATA_ERR
+		}			 
+		sector++;
+		writebuff+=BLOCK_BYTE_SIZE;
 	}
-	else
-	{
-		
-		if(SD_WriteMultiBlocks(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize, count)==SD_RESPONSE_NO_ERROR)
-		
-		return WRITE_DATA_SUCCESS;
-
-	}
+	return WRITE_DATA_SUCCESS;
 	
-	return WRITE_DATA_ERR;
 	
+	//if(count == 1)
+	//{
+		//
+		//if(SD_WriteBlock(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize)==SD_RESPONSE_NO_ERROR)//¶Á1¿é
+		//
+		//return WRITE_DATA_SUCCESS;
+		//
+	//}
+	//else
+	//{
+		//
+		//if(SD_WriteMultiBlocks(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize, count)==SD_RESPONSE_NO_ERROR)
+		//
+		//return WRITE_DATA_SUCCESS;
+//
+	//}
+	//
+	//return WRITE_DATA_ERR;
+	//
 	
 	
 }

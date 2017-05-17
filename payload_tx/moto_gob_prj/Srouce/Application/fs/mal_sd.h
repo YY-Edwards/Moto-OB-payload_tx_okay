@@ -46,6 +46,8 @@ typedef enum
   READ_DATA_SUCCESS		= (0x08),
   ERASE_ERR				= (0x09),
   ERASE_OK				= (0x10),
+  PARERR_ERR			= (0x11),
+  
  
  
 } MAL_ErrorStarus;
@@ -53,7 +55,8 @@ typedef enum
 
 /* Exported constants --------------------------------------------------------*/
 #define MAX_BLOCK_COUNT ((unsigned long int)0x00010000)//65535
-#define BLOCK_BYTE_SIZE ((unsigned long int)0x00000200)//512
+//#define BLOCK_BYTE_SIZE ((unsigned long int)0x00000200)//512
+#define BLOCK_BYTE_SIZE ((unsigned long int)0x00001000)//4096
 
 
 /* Exported macro ------------------------------------------------------------*/
