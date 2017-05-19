@@ -21,7 +21,7 @@ TIME.
 /* Includes ------------------------------------------------------------------*/
 #include "mal_sd.h"
 //#include "avr_spi_sd.h"
-#include "data_flash.h"
+#include "data_flash/data_flash.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -48,19 +48,27 @@ TIME.
 
 uint16_t MAL_InitConfig(void)
 {
-	uint16_t status = SDConfig_OK;
-        
-    SD_CardInfo cardinfo;
+	uint16_t status = DF_OK;
+	
+	if(!data_flash_init())return status;
 
-      if(!(SD_Init()))
-      {
-        
-			if(SD_GetCardInfo(&cardinfo)==0) /*获取SD卡信息 */
-			return status;//初始化成功
-      
-      }    
+	return DF_ERROR;
+	
 
-        return SDConfig_FALL;
+	
+	//uint16_t status = SDConfig_OK;
+        //
+    //SD_CardInfo cardinfo;
+//
+      //if(!(SD_Init()))
+      //{
+        //
+			//if(SD_GetCardInfo(&cardinfo)==0) /*获取SD卡信息 */
+			//return status;//初始化成功
+      //
+      //}    
+//
+        //return SDConfig_FALL;
 }
 
 
@@ -77,7 +85,7 @@ uint16_t MAL_InitConfig(void)
 ******************************************************************************************/
 
 
-
+/****
 MAL_ErrorStarus MAL_WriteData(void * writeBuff,uint32_t blockAddr,  uint32_t numByteToWrite)
 
 {
@@ -135,6 +143,7 @@ MAL_ErrorStarus MAL_WriteData(void * writeBuff,uint32_t blockAddr,  uint32_t num
     
 }
 
+****/
 
 /*****************************************************************************************
 
@@ -148,6 +157,7 @@ MAL_ErrorStarus MAL_WriteData(void * writeBuff,uint32_t blockAddr,  uint32_t num
 * Return         : SD_ErrorStarus: SD Card Error code.
 ******************************************************************************************/        
 
+/*****
         
 MAL_ErrorStarus MAL_ReadData(void * readBuff,uint32_t blockAddr,  uint32_t numByteToRead)
 
@@ -210,7 +220,7 @@ MAL_ErrorStarus MAL_ReadData(void * readBuff,uint32_t blockAddr,  uint32_t numBy
     return READ_DATA_SUCCESS;
     
 }
-
+****/
 
 /*****************************************************************************************
 
@@ -236,7 +246,7 @@ MAL_ErrorStarus MAL_ReadDisk(void *readbuff, uint32_t sector, uint32_t blockByte
 		ret = data_flash_read_block((sector*BLOCK_BYTE_SIZE), blockByteSize, readbuff);
 		if(ret != DF_OK)
 		{
-			return READ_DATA_ERR
+			return READ_DATA_ERR;
 		}
 		sector++;
 		readbuff+=BLOCK_BYTE_SIZE;
@@ -293,13 +303,13 @@ MAL_ErrorStarus MAL_WriteDisk(void *writebuff, uint32_t sector, uint32_t blockBy
 		ret = data_flash_erase_block((sector*BLOCK_BYTE_SIZE), DF_BLOCK_4KB);
 		if(ret != DF_ERASE_COMPLETED)
 		{
-			return WRITE_DATA_ERR
+			return WRITE_DATA_ERR;
 		}
 		
-		ret	= data_flash_write_block(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize,);
+		ret	= data_flash_write_block(writebuff, (sector*BLOCK_BYTE_SIZE), blockByteSize);
 		if(ret != DF_WRITE_COMPLETED)
 		{
-			return WRITE_DATA_ERR
+			return WRITE_DATA_ERR;
 		}			 
 		sector++;
 		writebuff+=BLOCK_BYTE_SIZE;

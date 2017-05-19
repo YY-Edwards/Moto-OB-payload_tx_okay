@@ -25,7 +25,7 @@ History:
 #include "Log/log.h"
 #include "Radio/xcmp.h"
 
-//#include "fs/fs.h"
+#include "fs/fs.h"
 #include "rtc/rtc.h"
 #include "data_flash/data_flash.h"
 
@@ -44,11 +44,13 @@ int main(void)
 	log_init();		
 	log("----start debug， yoyo----");	
 	
-	data_flash_init();
+	//data_flash_init();
 		
 	//rtc_init();
 	
-	//fs_init();//65795机器无法通过文件系统初始化,究起原因，貌似是Radio对OB板的输出功率无法满足SD卡的正常工作。
+
+	//fs_init();//data_flash_init();
+	//65795机器无法通过文件系统初始化,究起原因，貌似是Radio对OB板的输出功率无法满足SD卡的正常工作。
 
 	tc_init();	
 			

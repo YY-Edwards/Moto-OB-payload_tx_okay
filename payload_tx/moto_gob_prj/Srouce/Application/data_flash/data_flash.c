@@ -67,7 +67,7 @@ U8 data_flash_failure = 0;
 * 10-Feb-10   a21961    none        Initial draft
 *
 *******************************************************************************/
-void data_flash_init(void)
+uint16_t data_flash_init(void)
 {
 	U16 status = 0xff;
 
@@ -115,14 +115,14 @@ void data_flash_init(void)
 	{
 		//fatal_error(FATAL_ERROR_DATA_FLASH_SPI_INIT);
 		data_flash_failure = FATAL_ERROR_DATA_FLASH_SPI_INIT;
-		return;
+		return data_flash_failure;
 	}
 
 	if (data_flash_check_device_id() != TRUE)
 	{
 		//fatal_error(FATAL_ERROR_DATA_FLASH_READ_ID);
 		data_flash_failure = FATAL_ERROR_DATA_FLASH_READ_ID;
-		return;
+		return data_flash_failure;
 	}
 
 	// Set STATUS reg to unprotect all sect
@@ -134,9 +134,11 @@ void data_flash_init(void)
 	// then read address 0x00001002 every 5s and report to radio with failure
 
 
-	create_data_flash_test_task();
-
-	return;
+	//create_data_flash_test_task();
+	//status = read_voice_file_info(&voice_counters);
+	
+	status = 0;
+	return status;
 }
 
 /*******************************************************************************
@@ -213,7 +215,7 @@ static Bool data_flash_check_device_id(void)
 *--------------------------- DETAILED DESCRIPTION ------------------------------
 *
 * This function is the "raw" driver, i.e, without consideration for page wrap,
-* etc. Please refer to AT25DF641 datasheet for detail.
+* etc. Please refer to AT25DF641 data-sheet for detail.
 *
 * Caller of this function must follow below rules for input param:
 *

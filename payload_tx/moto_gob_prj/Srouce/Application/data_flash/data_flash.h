@@ -107,7 +107,7 @@ typedef enum
 #define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0x7FFF00))
 //#define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0xFF))//huayi
 
-void data_flash_init(void);
+uint16_t data_flash_init(void);
 U16 send_flash_command(U16 command, U32 address, U8 *data_ptr, U16 length);
 df_status_t data_flash_erase_block(U32 address, df_block_size_t block_size);
 df_status_t data_flash_write_block(U8 *data_ptr, U32 address, U16 data_length);

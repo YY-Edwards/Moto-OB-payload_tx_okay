@@ -74,19 +74,22 @@ static volatile xQueueHandle fl_oper_queue = NULL;
 fs_err_t disk_init(void)
 {
 	char str[MAX_DISK_LABEL_SIZE];
+	FRESULT res = 0;
 	
 	/*initialize disk*/
 	if(MAL_InitConfig())
 	{
 		return disk_err;
-	}	
+	}
+	
+	//res = f_mkfs (0, 0, 4096);	
 		
 	if(f_mount(&fs, "/", 1) != FR_OK)
 	{
 		return amount_err;
 	}
 	
-	FRESULT res = f_getfree("/", &clust, &pfs);
+	res = f_getfree("/", &clust, &pfs);
 	if(res == FR_NO_FILESYSTEM) 
 	{
 		/* Create a file system on the drive */

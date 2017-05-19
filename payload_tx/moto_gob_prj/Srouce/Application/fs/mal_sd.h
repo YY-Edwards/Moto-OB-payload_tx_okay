@@ -64,9 +64,9 @@ typedef enum
 /* Exported functions ------------------------------------------------------- */
 unsigned short int MAL_InitConfig(void);
 
-MAL_ErrorStarus MAL_WriteData(void *writeBuff, unsigned long int blockAddr, unsigned long int numByteToWrite);//从指定块开始写入指定长度数据
+//MAL_ErrorStarus MAL_WriteData(void *writeBuff, unsigned long int blockAddr, unsigned long int numByteToWrite);//从指定块开始写入指定长度数据
 
-MAL_ErrorStarus MAL_ReadData( void *readBuff, unsigned long int blockAddr, unsigned long int numByteToRead);
+//MAL_ErrorStarus MAL_ReadData( void *readBuff, unsigned long int blockAddr, unsigned long int numByteToRead);
 
 MAL_ErrorStarus MAL_ReadDisk(void *readBuff, unsigned long int sector, unsigned long int blockByteSize, unsigned char count);
 

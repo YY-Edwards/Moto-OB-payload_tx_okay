@@ -291,7 +291,7 @@ DRESULT disk_ioctl (
 		
 		case GET_SECTOR_COUNT:
 		
-			*(DWORD*)buff = 2048;//SD_GetSectorCount();8192x1024/4096byte = 2048
+			*(DWORD*)buff = 2048*7;//SD_GetSectorCount();8192x1024/4096byte = 2048
 			//*(DWORD*)buff = 1024;
 		
 			res = RES_OK;

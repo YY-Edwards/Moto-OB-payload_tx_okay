@@ -69,7 +69,12 @@ Srouce/main.d Srouce/main.o Srouce/main.o: ../Srouce/main.c \
  ../Srouce/Application/Radio/xnl.h ../Srouce/Log/log.h \
  ../Srouce/ASF/avr32/drivers/usart/usart.h \
  ../Srouce/Application/Radio/xcmp.h ../Srouce/Application/Radio/xnl.h \
- ../Srouce/Application/rtc/rtc.h \
+ ../Srouce/Application/fs/fs.h ../Srouce/Application/fs/mal_sd.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h \
+ ../Srouce/ASF/thirdparty/ff11a/ff.h \
+ ../Srouce/ASF/thirdparty/ff11a/integer.h \
+ ../Srouce/ASF/thirdparty/ff11a/ffconf.h ../Srouce/Application/rtc/rtc.h \
  ../Srouce/Application/data_flash/data_flash.h \
  ../Srouce/ASF/avr32/drivers/spi/spi.h \
  ../Srouce/ASF/avr32/drivers/gpio/gpio.h \
@@ -223,6 +228,20 @@ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bi
 ../Srouce/Application/Radio/xcmp.h:
 
 ../Srouce/Application/Radio/xnl.h:
+
+../Srouce/Application/fs/fs.h:
+
+../Srouce/Application/fs/mal_sd.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h:
+
+../Srouce/ASF/thirdparty/ff11a/ff.h:
+
+../Srouce/ASF/thirdparty/ff11a/integer.h:
+
+../Srouce/ASF/thirdparty/ff11a/ffconf.h:
 
 ../Srouce/Application/rtc/rtc.h:
 

@@ -893,7 +893,7 @@ static __app_Thread_(app_cfg)
 					isAudioRouting++;
 				}
 
-				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
+				log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
 				//log("\n\r un: %d \n\r", Speaker_is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);			
