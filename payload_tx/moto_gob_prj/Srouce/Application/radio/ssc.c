@@ -207,8 +207,8 @@ Called By: phy_init -- physical.c
 */
 void ssc_init(void)
 {		
-    /*Set up PB03 to watch FS.*/
-    AVR32_GPIO.port[1].oderc = 0x00000002;
+    /*Set up PB01 to watch FS.*/
+    AVR32_GPIO.port[1].oderc = 0x00000002;	
     AVR32_GPIO.port[1].gpers = 0x00000002;
 
     /*Waits for radio to start making FSYNC.*/
