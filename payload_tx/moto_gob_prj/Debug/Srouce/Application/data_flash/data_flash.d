@@ -72,7 +72,9 @@ Srouce/Application/data_flash/data_flash.d \
  ../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h \
  ../Srouce/Application/radio/xcmp.h ../Srouce/Application/radio/xnl.h \
  ../Srouce/Config/../Log/log.h ../Srouce/ASF/avr32/drivers/usart/usart.h \
- ../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h
+ ../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h
 
 ../Srouce/Application/data_flash/data_flash.h:
 
@@ -221,3 +223,7 @@ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bi
 ../Srouce/ASF/avr32/drivers/usart/usart.h:
 
 ../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h:

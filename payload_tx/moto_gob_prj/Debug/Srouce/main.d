@@ -74,7 +74,9 @@ Srouce/main.d Srouce/main.o Srouce/main.o: ../Srouce/main.c \
  ../Srouce/ASF/avr32/drivers/spi/spi.h \
  ../Srouce/ASF/avr32/drivers/gpio/gpio.h \
  ../Srouce/ASF/avr32/drivers/pm/pm.h ../Srouce/Application/radio/xcmp.h \
- ../Srouce/Config/../Log/log.h
+ ../Srouce/Config/../Log/log.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h
 
 d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/include/stdbool.h:
 
@@ -237,3 +239,7 @@ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bi
 ../Srouce/Application/radio/xcmp.h:
 
 ../Srouce/Config/../Log/log.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h:

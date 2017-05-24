@@ -35,6 +35,7 @@
 //#include "EVK1101/evk1101.h"
 #include "radio/xcmp.h"
 #include "../Log/log.h"
+#include "string.h"
 
 //#include "utility.h"
 
@@ -101,6 +102,31 @@ typedef enum
 #define spi_write_dummy()                   spi_write(spi, 0xFF)
 #define spi_write_byte(x)                   spi_write(spi, (U16)x)
 #define spi_read_byte(x)                    spi_read(spi, (U16*)x)
+
+#define LABEL_ADDRESS				0x000000
+#define LABEL_LENGTH				0x07//7bytes:"MOTOREC"
+
+#define VOICE_NUMBERS_ADDRESS		0x00000A
+#define VOICE_NUMBERS_LENGTH		0x02//2bytes:0x xxxx
+
+#define START_ADDRESS_OF_VOICE_INFO	0x000010
+#define VOICE_INFO_LENGTH	0x07//7bytes:list_number(2bytes) + address(3bytes) + length(2bytes)
+
+#pragma pack(1)
+typedef struct
+{
+	unsigned short numb;
+	unsigned char address[3];
+	unsigned short offset;
+
+}VoiceList_Info_t;
+#pragma pack()
+
+
+#define VOICE_LIST_BOUNDARY 0x080000 //512k
+
+#define VOICE_DATA_START_ADDRESS 0x090000 
+
 
 #define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > (addr | 0x0000FF) ? TRUE : FALSE)
 //#define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > ((addr & 0x7FFF00)+DF_PAGE_SIZE) ? TRUE : FALSE)//huayi

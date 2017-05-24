@@ -30,11 +30,19 @@
 #include "data_flash.h"
 
 volatile avr32_spi_t *spi;
+static Bool create_data_list(void);
+static Bool save_voice_data(void *data_ptr, U16 data_len, U8 voice_end_flag);
+
 static Bool data_flash_check_device_id(void);
 static void test_data_flash(Bool bReadOnlyTest);
 void create_data_flash_test_task();
 void runDataFlashTest( void *pvParameters );
 U8 data_flash_failure = 0;
+
+volatile const char FlashLabel[] = { "MOTOREC"};
+static unsigned short current_voice_index = 0;
+static unsigned int	  current_voice_data_offset = VOICE_DATA_START_ADDRESS;
+
 
 /*******************************************************************************
 *
@@ -111,7 +119,7 @@ void data_flash_init(void)
 	spi_enable(spi);
 
 	// Initialize data flash with SPI clock Osc0.
-	if (spi_setupChipReg(spi, &spiOptions, FOSC0) != SPI_OK)
+	if (spi_setupChipReg(spi, &spiOptions, 2*FOSC0) != SPI_OK)
 	{
 		//fatal_error(FATAL_ERROR_DATA_FLASH_SPI_INIT);
 		data_flash_failure = FATAL_ERROR_DATA_FLASH_SPI_INIT;
@@ -133,8 +141,10 @@ void data_flash_init(void)
 	// after 5 seconds, perform a test on write and read back 0x5A5A to address 0x00001002
 	// then read address 0x00001002 every 5s and report to radio with failure
 
-
-	create_data_flash_test_task();
+	//test_data_flash(FALSE);
+	//create_data_flash_test_task();
+	create_data_list();
+	//save_voice_data();
 
 	return;
 }
@@ -539,6 +549,178 @@ void create_data_flash_test_task()
 			,  NULL );
 }
 
+
+/*******************************************************************************
+*
+*                     C L U S T E R    F U N C T I O N
+*
+*            COPYRIGHT 2017 SHJH, INC. ALL RIGHTS RESERVED.
+*
+********************************************************************************
+*
+* FUNCTION NAME: create_data_list
+*
+*---------------------------------- PURPOSE ------------------------------------
+*
+* This function is called by data_flash_init() to create voice(AMBE+) storage list for data flash.
+*
+*---------------------------------- SYNOPSIS -----------------------------------
+*
+*--------------------------- DETAILED DESCRIPTION ------------------------------
+*
+*------------------------------- REVISIONS -------------------------------------
+* Date        Name      Prob#       Description
+* ----------  --------  ----------  --------------------------------------------
+* 20-Fri-17   Edwards    none        Initial draft
+*
+*******************************************************************************/
+static Bool create_data_list(void)
+{
+	df_status_t return_code = DF_OK;
+	unsigned int i = 0;
+	unsigned int address =0x00000000;
+	char str[10];
+	memset(str, 0x00, sizeof(str));
+	
+	/* bytes remained less than one page */
+	return_code = data_flash_read_block(LABEL_ADDRESS, LABEL_LENGTH, str);
+	if(return_code == DF_OK)
+	{
+		if(memcmp(FlashLabel, str, sizeof(FlashLabel)-1) != 0)
+		{
+			//erase
+			for(i; i < (VOICE_LIST_BOUNDARY/(64*1024)); i++)
+			{
+				address+=(i*65536);//64k*1024=65536bytes
+				return_code = data_flash_erase_block(address, DF_BLOCK_64KB);
+				if(return_code != DF_ERASE_COMPLETED)
+				{
+					return FALSE;
+				}
+			}
+			//set label
+			return_code = data_flash_write_page(FlashLabel, LABEL_ADDRESS, LABEL_LENGTH);
+			//set current_voice_index
+			memset(str, 0x00, sizeof(str));
+			return_code = data_flash_write_page(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
+			if(return_code != DF_WRITE_COMPLETED)
+			{
+				return FALSE;
+			}		
+			return TRUE;		
+						
+		}
+		else//success
+		{
+			return_code = data_flash_read_block(VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH, &current_voice_index);
+			if(return_code == DF_OK) 
+			{	
+				if(current_voice_index > 9000){//reset list numbers
+					memset(str, 0x00, sizeof(str));
+					return_code = data_flash_write_page(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
+					if(return_code != DF_WRITE_COMPLETED)
+					{
+						return FALSE;
+					}
+				}
+				
+				return TRUE;
+			}
+			else
+				return FALSE;
+		}
+	}
+	return FALSE;
+
+}
+
+/*******************************************************************************
+*
+*                     C L U S T E R    F U N C T I O N
+*
+*            COPYRIGHT 2017 SHJH, INC. ALL RIGHTS RESERVED.
+*
+********************************************************************************
+*
+* FUNCTION NAME: save_voice_data
+*
+*---------------------------------- PURPOSE ------------------------------------
+*
+* This function is called by app to save voice data.
+*
+*---------------------------------- SYNOPSIS -----------------------------------
+*
+*--------------------------- DETAILED DESCRIPTION ------------------------------
+*
+* To keep write operation more controllable, a 4KB limitation is applied on input
+* parameter length.
+*
+*------------------------------- REVISIONS -------------------------------------
+* Date        Name      Prob#       Description
+* ----------  --------  ----------  --------------------------------------------
+* 20-Fri-17   Edwards    none        Initial draft
+*
+*******************************************************************************/
+static Bool save_voice_data(void *data_ptr, U16 data_len, U8 voice_end_flag)
+{
+	static U32 bytes_remained = 0;
+	static U32 address = 0;
+	static VoiceList_Info_t *voicelistinfo_t = malloc(sizeof(VoiceList_Info_t));
+
+	df_status_t return_code = DF_WRITE_COMPLETED;
+	
+	bytes_remained+=data_len;
+	/* check input parameter */
+	if (data_ptr == NULL || data_len > 0x1000)
+	{
+		return FALSE;
+	}
+	if((voice_end_flag == 1) && (bytes_remained >> 0xFFFF))
+	{
+		bytes_remained = 0;
+		return FALSE;
+	}
+	
+	if(current_voice_index == 0)//list is empty
+	{
+		address = current_voice_data_offset;
+	}
+	else
+	{
+		
+		return_code = data_flash_read_block(LABEL_ADDRESS, LABEL_LENGTH, str);
+		if(return_code == DF_OK)
+		
+	}
+	
+	return_code = data_flash_write_block((U8 *)data_ptr, address, data_len)
+	if(return_code != DF_WRITE_COMPLETED)
+	{
+		return FALSE;
+	}
+	address+=data_len;
+		
+	if(voice_end_flag ==1)
+	{
+		current_voice_index++;
+		voicelistinfo_t->numb = current_voice_index;
+		voicelistinfo_t->address = address;
+		voicelistinfo_t->offset = bytes_remained;
+		//set voice list by current_voice_index
+		return_code = data_flash_write_page((U8 *)voicelistinfo_t, START_ADDRESS_OF_VOICE_INFO, VOICE_INFO_LENGTH);
+		if(return_code != DF_WRITE_COMPLETED)
+		{
+			return FALSE;
+		}
+				
+	}
+			
+
+	return TRUE;
+
+}
+
+
 /*******************************************************************************
 *
 *                     C L U S T E R    F U N C T I O N
@@ -722,12 +904,14 @@ df_status_t data_flash_erase_block(U32 address, df_block_size_t block_size)
 	{
 		return_code = DF_ERASE_FAIL;
 	}
+#if 0
 	else if (((status & STATUS_WRITE_NOT_ENABLED) != 0) ||
 			 ((status & STATUS_SECTOR_PROTECTED)  != 0) ||
 			 ((status & STATUS_WRITE_PROTECTED)   != 0))
 	{
 		return_code = DF_WRITE_DISABLED;
 	}
+#endif
 	else
 	{
 		/*  Erase Successful.  */

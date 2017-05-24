@@ -44,7 +44,7 @@ int main(void)
 	log_init();		
 	log("----start debug£¬ yoyo----");	
 	
-	//data_flash_init();
+	data_flash_init();
 		
 	//rtc_init();
 	

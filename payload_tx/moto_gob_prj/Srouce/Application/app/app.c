@@ -808,7 +808,7 @@ extern U32 tc_tick;
 
 static __app_Thread_(app_cfg)
 {
-	static int coun=0;
+	static int counter=0;
 	static  U32 isAudioRouting = 0;
 	static  portTickType xLastWakeTime;
 	const portTickType xFrequency = 4000;//2s,定时问题已经修正。2s x  2000hz = 4000
@@ -941,7 +941,9 @@ static __app_Thread_(app_cfg)
 			
 		}
 		//vTaskDelay(300*2 / portTICK_RATE_MS);//延迟300ms
-		//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
+		counter++;
+		log("\n\r counter: %d \n\r", counter);
+		//log("\n\r xLastWakeTime: %d \n\r", xLastWakeTime);
 		
 		vTaskDelayUntil( &xLastWakeTime, 1000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
 	}
