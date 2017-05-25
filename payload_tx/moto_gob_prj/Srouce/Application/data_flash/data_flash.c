@@ -32,6 +32,8 @@
 volatile avr32_spi_t *spi;
 static Bool create_data_list(void);
 static Bool save_voice_data(void *data_ptr, U16 data_len, U8 voice_end_flag);
+static U8 playback_voice_data(U16 voice_index);
+//static U32 read_voice_data(void *data_ptr, U16 voice_index, U8 *voice_end_flag);
 
 static Bool data_flash_check_device_id(void);
 static void test_data_flash(Bool bReadOnlyTest);
@@ -41,8 +43,11 @@ U8 data_flash_failure = 0;
 
 volatile const char FlashLabel[] = { "MOTOREC"};
 static unsigned short current_voice_index = 0;
-static unsigned int	  current_voice_data_offset = VOICE_DATA_START_ADDRESS;
+static unsigned int	  current_save_voice_offset = VOICE_DATA_START_ADDRESS;
+static U8 flash_init_success_flag = 0;
 
+extern char AMBE_AudioData[];
+U8 FLASH_BUF[4096];
 
 /*******************************************************************************
 *
@@ -144,8 +149,27 @@ void data_flash_init(void)
 	//test_data_flash(FALSE);
 	//create_data_flash_test_task();
 	create_data_list();
-	//save_voice_data();
+	
+	data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
+	data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
+	//save_voice_data(AMBE_AudioData, 600, TRUE);//1
+	//save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
+	//save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
+	//
+	////save_voice_data(&AMBE_AudioData, 600, TRUE);//4
+	////save_voice_data(&AMBE_AudioData, 600, TRUE);//5
+	////save_voice_data(&AMBE_AudioData, 600, TRUE);//6
+	//save_voice_data(&AMBE_AudioData, 1024, TRUE);//4
+	//save_voice_data(&AMBE_AudioData, 1350, TRUE);//5
+	////save_voice_data(&AMBE_AudioData, 600, TRUE);//9
+	//
+	//playback_voice_data(3);
+	//playback_voice_data(2);
+	//playback_voice_data(1);
+	//playback_voice_data(5);
+	//playback_voice_data(4);
 
+	
 	return;
 }
 
@@ -430,9 +454,10 @@ int data_flash_test(U8 value)
 void test_data_flash(Bool bReadOnlyTest)
 {
 	/* write 0x5A5A to address 0x00000000 then read it back */
-	U8 data_write_in[2] = {0x5A, 0x5A};
+	U8 data_write_in[2] = {0x5A, 0x72};
 	U8 data_read_out[2] = {0, 0};
-	U32 test_address = 0x00001002;
+	//U32 test_address = 0x00001002;
+	U32 test_address = 0x00000000;
 	U16 status = 1;
 	U16 count = 0;
 
@@ -478,6 +503,14 @@ void test_data_flash(Bool bReadOnlyTest)
 		send_flash_command(READ_ARRAY, test_address, data_read_out, 2);
 
 		status = send_flash_command(READ_STATUS_REG, 0, NULL, 0);
+		
+		while(1)
+		{
+			 /* read only test */
+			 data_read_out[0] = 0x0;
+			 data_read_out[1] = 0x0;
+			 send_flash_command(READ_ARRAY, test_address, data_read_out, 2);
+		}
 
 
 	    if ((data_read_out[0] == 0x5A) || (data_read_out[1] == 0x5A))
@@ -578,7 +611,7 @@ static Bool create_data_list(void)
 {
 	df_status_t return_code = DF_OK;
 	unsigned int i = 0;
-	unsigned int address =0x00000000;
+	unsigned int address =0x00000000;	
 	char str[10];
 	memset(str, 0x00, sizeof(str));
 	
@@ -586,49 +619,65 @@ static Bool create_data_list(void)
 	return_code = data_flash_read_block(LABEL_ADDRESS, LABEL_LENGTH, str);
 	if(return_code == DF_OK)
 	{
-		if(memcmp(FlashLabel, str, sizeof(FlashLabel)-1) != 0)
+		if(memcmp(FlashLabel, str, sizeof(FlashLabel)-1) != 0)//compare label
 		{
 			//erase
-			for(i; i < (VOICE_LIST_BOUNDARY/(64*1024)); i++)
+			for(i; i < (VOICE_LIST_BOUNDARY/(64*1024)); i++)//8*64k
 			{
-				address+=(i*65536);//64k*1024=65536bytes
 				return_code = data_flash_erase_block(address, DF_BLOCK_64KB);
 				if(return_code != DF_ERASE_COMPLETED)
 				{
 					return FALSE;
 				}
+				address+=65536;//64k*1024=65536bytes
 			}
 			//set label
-			return_code = data_flash_write_page(FlashLabel, LABEL_ADDRESS, LABEL_LENGTH);
+			return_code = data_flash_write(FlashLabel, LABEL_ADDRESS, LABEL_LENGTH);
 			//set current_voice_index
 			memset(str, 0x00, sizeof(str));
-			return_code = data_flash_write_page(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
+			return_code = data_flash_write(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
 			if(return_code != DF_WRITE_COMPLETED)
 			{
 				return FALSE;
-			}		
-			return TRUE;		
-						
+			}
+			data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);										
 		}
 		else//success
-		{
+		{	
+			//Get the current voice index
 			return_code = data_flash_read_block(VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH, &current_voice_index);
 			if(return_code == DF_OK) 
 			{	
-				if(current_voice_index > 9000){//reset list numbers
-					memset(str, 0x00, sizeof(str));
-					return_code = data_flash_write_page(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
-					if(return_code != DF_WRITE_COMPLETED)
+				//Calculates the offset address of the current stored voice
+				if(current_voice_index != 0){
+					
+					if(current_voice_index > 100){//reset list numbers
+						return_code = data_flash_write(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
+						if(return_code != DF_WRITE_COMPLETED)
+						{
+							return FALSE;
+						}
+					}
+					
+					address = START_ADDRESS_OF_VOICE_INFO + ((current_voice_index -1)*VOICE_INFO_LENGTH);
+					return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
+					if(return_code == DF_OK)
 					{
-						return FALSE;
+						VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
+						if(ptr->numb == current_voice_index)
+						{
+							current_save_voice_offset = ptr->address + ptr->offset;						
+						}
+						else
+							return FALSE;		
 					}
 				}
-				
-				return TRUE;
 			}
 			else
 				return FALSE;
 		}
+		flash_init_success_flag = 1;
+		return TRUE;
 	}
 	return FALSE;
 
@@ -646,7 +695,7 @@ static Bool create_data_list(void)
 *
 *---------------------------------- PURPOSE ------------------------------------
 *
-* This function is called by app to save voice data.
+* This function is called by record to save voice data.
 *
 *---------------------------------- SYNOPSIS -----------------------------------
 *
@@ -663,64 +712,222 @@ static Bool create_data_list(void)
 *******************************************************************************/
 static Bool save_voice_data(void *data_ptr, U16 data_len, U8 voice_end_flag)
 {
+	if(!flash_init_success_flag)return FALSE;
+	
+	U32 address = 0;
 	static U32 bytes_remained = 0;
-	static U32 address = 0;
-	static VoiceList_Info_t *voicelistinfo_t = malloc(sizeof(VoiceList_Info_t));
-
+	VoiceList_Info_t *ptr = malloc(sizeof(VoiceList_Info_t));
+	if(ptr ==NULL)return FALSE;
 	df_status_t return_code = DF_WRITE_COMPLETED;
 	
-	bytes_remained+=data_len;
+	bytes_remained+=data_len;//accumulate
 	/* check input parameter */
 	if (data_ptr == NULL || data_len > 0x1000)
 	{
+		if(ptr != NULL)
+		free(ptr);
+		ptr = NULL;
 		return FALSE;
 	}
-	if((voice_end_flag == 1) && (bytes_remained >> 0xFFFF))
+	if(bytes_remained > 0xFFFF)//data size > 65535bytes == 64k,overout
 	{
 		bytes_remained = 0;
+		if(ptr != NULL)
+		free(ptr);
+		ptr = NULL;
 		return FALSE;
 	}
-	
-	if(current_voice_index == 0)//list is empty
+	//save data
+	if(current_save_voice_offset > DF_MAX_ADDR)//The voice data is out of bounds
 	{
-		address = current_voice_data_offset;
+		if(ptr != NULL)
+		free(ptr);
+		ptr = NULL;
+		return FALSE;
+		log("\r\n----voice data is Out of bounds!!!\r\n----");
 	}
-	else
-	{
-		
-		return_code = data_flash_read_block(LABEL_ADDRESS, LABEL_LENGTH, str);
-		if(return_code == DF_OK)
-		
-	}
-	
-	return_code = data_flash_write_block((U8 *)data_ptr, address, data_len)
+	return_code = data_flash_write((U8 *)data_ptr, current_save_voice_offset, data_len);
 	if(return_code != DF_WRITE_COMPLETED)
 	{
+		if(ptr != NULL)
+		free(ptr);
+		ptr = NULL;
 		return FALSE;
 	}
-	address+=data_len;
+	current_save_voice_offset+=data_len;
 		
-	if(voice_end_flag ==1)
+	if(voice_end_flag == TRUE)//save a voice-info into list at the end of the recording
 	{
 		current_voice_index++;
-		voicelistinfo_t->numb = current_voice_index;
-		voicelistinfo_t->address = address;
-		voicelistinfo_t->offset = bytes_remained;
-		//set voice list by current_voice_index
-		return_code = data_flash_write_page((U8 *)voicelistinfo_t, START_ADDRESS_OF_VOICE_INFO, VOICE_INFO_LENGTH);
+		ptr->numb		= current_voice_index;
+		ptr->address	= (current_save_voice_offset - bytes_remained);
+		ptr->offset		= bytes_remained;
+		
+		address = START_ADDRESS_OF_VOICE_INFO + ((current_voice_index -1)*VOICE_INFO_LENGTH);
+		if(address > VOICE_LIST_BOUNDARY)//The number of messages is out of bounds
+		{
+			if(ptr != NULL)
+			free(ptr);
+			ptr = NULL;
+			return FALSE;
+			log("\r\n----info list is Out of bounds!!!\r\n----");
+		}
+		//set a voice info by current_voice_index
+		return_code = data_flash_write((U8 *)ptr, address, VOICE_INFO_LENGTH);
+		//set voice numbers
+		return_code = data_flash_write(&current_voice_index, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
 		if(return_code != DF_WRITE_COMPLETED)
 		{
+			if(ptr != NULL)
+			free(ptr);
+			ptr = NULL;
 			return FALSE;
 		}
-				
+		
+		bytes_remained = 0;//reset 0		
 	}
 			
-
+	if(ptr != NULL)
+	free(ptr);
+	ptr = NULL;
 	return TRUE;
 
 }
 
 
+/*******************************************************************************
+*
+*                     C L U S T E R    F U N C T I O N
+*
+*            COPYRIGHT 2017 SHJH, INC. ALL RIGHTS RESERVED.
+*
+********************************************************************************
+*
+* FUNCTION NAME: playback_voice_data
+*
+*---------------------------------- PURPOSE ------------------------------------
+*
+* This function is called by playback to read voice data.
+*
+*---------------------------------- SYNOPSIS -----------------------------------
+*
+*--------------------------- DETAILED DESCRIPTION ------------------------------
+*
+* To keep read operation more controllable, a 4KB limitation is applied on return
+* parameter length.
+*
+*------------------------------- REVISIONS -------------------------------------
+* Date        Name      Prob#       Description
+* ----------  --------  ----------  --------------------------------------------
+* 20-Fri-17   Edwards    none        Initial draft
+*
+*******************************************************************************/
+U8 PLAYBACK_BUF[512];
+static U8 playback_voice_data(U16 voice_index)
+//static U32 read_voice_data(void *data_ptr, U16 voice_index, U8 *voice_end_flag)
+{
+	if(!flash_init_success_flag)return FALSE;
+	
+	/* check input parameter */
+	if (voice_index >= current_voice_index)
+	{
+		return -1;
+	}
+	df_status_t return_code = DF_OK;
+	unsigned int address =0x00000000;
+	char str[VOICE_INFO_LENGTH];
+	memset(str, 0x00, sizeof(str));
+	//find the voice storage info by voice_index
+	address = START_ADDRESS_OF_VOICE_INFO + ((voice_index -1)*VOICE_INFO_LENGTH);
+	return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
+	if (return_code == DF_OK)
+	{
+		U16 bytes_remained;
+		VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;	
+		if(ptr->numb == voice_index)
+		{
+			bytes_remained = ptr->offset;
+			address = ptr->address;
+			
+			while (bytes_remained >= 1 && return_code == DF_OK)
+			{
+				if(bytes_remained < DF_DATA_SPACE_SIZE)//< 512bytes
+				{
+					return_code = data_flash_read_block(address, bytes_remained, PLAYBACK_BUF);
+					bytes_remained = 0;	/* end while loop */
+
+				}
+				else//bytes_remained > DF_DATA_SPACE_SIZE
+				{
+					return_code = data_flash_read_block(address, DF_DATA_SPACE_SIZE, PLAYBACK_BUF);
+					bytes_remained-=DF_DATA_SPACE_SIZE;
+					address+=DF_DATA_SPACE_SIZE;
+					
+				}
+				memset(PLAYBACK_BUF, 0x00, DF_DATA_SPACE_SIZE);
+			}
+			return TRUE;	
+		}
+	}
+	
+	return -1;
+	
+
+#if 0
+
+	/* check input parameter */
+	if (data_ptr == NULL || voice_index >= current_voice_index)
+	{
+		return -1;
+	}
+	
+	df_status_t return_code = DF_OK;
+	unsigned int i = 0;
+	unsigned int address =0x00000000;
+	char str[VOICE_INFO_LENGTH];
+	memset(str, 0x00, sizeof(str));
+	
+	address = START_ADDRESS_OF_VOICE_INFO + ((voice_index -1)*VOICE_INFO_LENGTH);
+	return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
+	if(return_code == DF_OK)
+	{
+		U32 blocks;
+		U16 offset;
+		U16 bytes_remained;
+			
+		VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
+		if(ptr->numb == voice_index)
+		{
+			bytes_remained = ptr->offset;
+			blocks = (ptr->offset)/DF_DATA_SPACE_SIZE;
+			offset = (ptr->offset)%DF_DATA_SPACE_SIZE;
+			address = ptr->address;
+			
+			while (bytes_remained >= 1 && return_code == DF_OK)
+			{
+				if(bytes_remained < DF_DATA_SPACE_SIZE)//< 512bytes
+				{
+					return_code = data_flash_read_block(address, bytes_remained, (U8 *)data_ptr);
+					bytes_remained = 0;	/* end while loop */			
+
+				}
+				else//bytes_remained > DF_DATA_SPACE_SIZE
+				{
+					return_code = data_flash_read_block(address, DF_DATA_SPACE_SIZE, (U8 *)data_ptr);
+					bytes_remained-=DF_DATA_SPACE_SIZE;
+					address+=DF_DATA_SPACE_SIZE;
+					
+				}
+				
+			}
+		}		
+		else
+			return -1;
+	}
+
+#endif
+	
+}
 /*******************************************************************************
 *
 *                     C L U S T E R    F U N C T I O N
@@ -922,6 +1129,85 @@ df_status_t data_flash_erase_block(U32 address, df_block_size_t block_size)
 	send_flash_command(WRITE_DISABLE, 0, NULL, 0);
 
 	return return_code;
+}
+
+/*******************************************************************************
+*
+*                     C L U S T E R    F U N C T I O N
+*
+*            COPYRIGHT 2009 MOTOROLA, INC. ALL RIGHTS RESERVED.
+*
+********************************************************************************
+*
+* FUNCTION NAME: data_flash_write
+*
+*---------------------------------- PURPOSE ------------------------------------
+*
+* This function is provide as external interface to write data flash with
+* specified source data, destination address and data length.(and erase function)
+*
+*---------------------------------- SYNOPSIS -----------------------------------
+*
+*--------------------------- DETAILED DESCRIPTION ------------------------------
+*
+* To keep write operation more controllable, a 4KB limitation is applied on input
+* parameter length.
+*
+*------------------------------- REVISIONS -------------------------------------
+* Date        Name      Prob#       Description
+* ----------  --------  ----------  --------------------------------------------
+* 25-Fri-17   Edwards    none        Initial draft
+*
+*******************************************************************************/
+df_status_t data_flash_write(U8 *data_ptr, U32 address, U16 data_length)
+{
+	U32 secpos;
+	U16 secoff;
+	U16 secremain;
+	U16 i;
+	df_status_t return_code = DF_OK;
+
+	secpos	=	address/4096;//扇区地址 0~2047 for AT25DF641 
+	secoff	=	address%4096;//在扇区内的偏移
+	secremain	=	4096-secoff;//扇区剩余空间大小
+	if(data_length <= secremain)secremain = data_length;//不大于4096个字节
+	while(1)
+	{
+		data_flash_read_block(secpos*4096, 4096, FLASH_BUF);//读出整个扇区的内容
+		for(i=0; i<secremain; i++)//校验数据
+		{
+			if(FLASH_BUF[secoff+i]!=0XFF)break;//需要擦除
+		}
+		if(i < secremain)//需要擦除
+		{
+			return_code = data_flash_erase_block(secpos, DF_BLOCK_4KB);//擦除这个扇区
+			for(i=0; i<secremain; i++)	   //复制
+			{
+				FLASH_BUF[i+secoff]=data_ptr[i];
+			}
+			return_code = data_flash_write_block(FLASH_BUF, secpos*4096, 4096);//写入整个扇区
+
+		}
+		else 
+		{
+			return_code = data_flash_write_block(data_ptr, address, secremain);//写已经擦除了的,直接写入扇区剩余区间.
+		}
+		if(data_length==secremain)break;//写入结束了
+		else//写入未结束
+		{
+			secpos++;//扇区地址增1
+			secoff=0;//偏移位置为0
+
+			data_ptr+=secremain;  //指针偏移
+			address+=secremain;//写地址偏移
+			data_length-=secremain;				//字节数递减
+			if(data_length>4096)secremain=4096;	//下一个扇区还是写不完
+			else secremain=data_length;			//下一个扇区可以写完了
+		}
+	}
+	
+	return return_code;
+	
 }
 
 /*******************************************************************************

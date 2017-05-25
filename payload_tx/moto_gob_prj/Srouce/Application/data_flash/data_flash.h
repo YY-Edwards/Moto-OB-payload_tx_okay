@@ -78,6 +78,7 @@
 
 #define     DF_MAX_ADDR                     0x7FFFFF    /* 8MB */
 #define     DF_PAGE_SIZE                    0x100       /* 256B */
+#define     DF_DATA_SPACE_SIZE              0x200       /* 512 */
 
 typedef enum
 {
@@ -110,13 +111,13 @@ typedef enum
 #define VOICE_NUMBERS_LENGTH		0x02//2bytes:0x xxxx
 
 #define START_ADDRESS_OF_VOICE_INFO	0x000010
-#define VOICE_INFO_LENGTH	0x07//7bytes:list_number(2bytes) + address(3bytes) + length(2bytes)
+#define VOICE_INFO_LENGTH	0x08//7bytes:list_number(2bytes) + address(4bytes) + length(2bytes)
 
 #pragma pack(1)
 typedef struct
 {
 	unsigned short numb;
-	unsigned char address[3];
+	unsigned int address;
 	unsigned short offset;
 
 }VoiceList_Info_t;
@@ -136,6 +137,7 @@ typedef struct
 void data_flash_init(void);
 U16 send_flash_command(U16 command, U32 address, U8 *data_ptr, U16 length);
 df_status_t data_flash_erase_block(U32 address, df_block_size_t block_size);
+df_status_t data_flash_write(U8 *data_ptr, U32 address, U16 data_length);
 df_status_t data_flash_write_block(U8 *data_ptr, U32 address, U16 data_length);
 df_status_t data_flash_write_page(U8 *data_ptr, U32 address, U16 length);
 df_status_t data_flash_read_block(U32 address, U16 length, U8 *data_ptr);
