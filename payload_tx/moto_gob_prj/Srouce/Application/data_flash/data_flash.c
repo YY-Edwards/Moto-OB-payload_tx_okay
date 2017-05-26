@@ -150,11 +150,11 @@ void data_flash_init(void)
 	//create_data_flash_test_task();
 	create_data_list();
 	
-	data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
-	data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
-	//save_voice_data(AMBE_AudioData, 600, TRUE);//1
-	//save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
-	//save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
+	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
+	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
+	save_voice_data(AMBE_AudioData, 600, TRUE);//1
+	save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
+	save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
 	//
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//4
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//5
@@ -164,8 +164,8 @@ void data_flash_init(void)
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//9
 	//
 	//playback_voice_data(3);
-	//playback_voice_data(2);
-	//playback_voice_data(1);
+	playback_voice_data(3);
+	playback_voice_data(20);
 	//playback_voice_data(5);
 	//playback_voice_data(4);
 
@@ -615,6 +615,8 @@ static Bool create_data_list(void)
 	char str[10];
 	memset(str, 0x00, sizeof(str));
 	
+start:	
+
 	/* bytes remained less than one page */
 	return_code = data_flash_read_block(LABEL_ADDRESS, LABEL_LENGTH, str);
 	if(return_code == DF_OK)
@@ -639,8 +641,7 @@ static Bool create_data_list(void)
 			if(return_code != DF_WRITE_COMPLETED)
 			{
 				return FALSE;
-			}
-			data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);										
+			}									
 		}
 		else//success
 		{	
@@ -650,15 +651,7 @@ static Bool create_data_list(void)
 			{	
 				//Calculates the offset address of the current stored voice
 				if(current_voice_index != 0){
-					
-					if(current_voice_index > 100){//reset list numbers
-						return_code = data_flash_write(str, VOICE_NUMBERS_ADDRESS, VOICE_NUMBERS_LENGTH);
-						if(return_code != DF_WRITE_COMPLETED)
-						{
-							return FALSE;
-						}
-					}
-					
+									
 					address = START_ADDRESS_OF_VOICE_INFO + ((current_voice_index -1)*VOICE_INFO_LENGTH);
 					return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
 					if(return_code == DF_OK)
@@ -666,7 +659,16 @@ static Bool create_data_list(void)
 						VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
 						if(ptr->numb == current_voice_index)
 						{
-							current_save_voice_offset = ptr->address + ptr->offset;						
+							current_save_voice_offset = ptr->address + ptr->offset;
+							if(current_save_voice_offset > 0x7bc000){
+								
+								log("\r\n----voice storage is full!!!----\r\n");
+								//chip erase
+								return_code = data_flash_erase_block(0, DF_BLOCK_ALL);
+								if(return_code == DF_ERASE_COMPLETED)goto start;
+								else
+									return FALSE;																						
+							}						
 						}
 						else
 							return FALSE;		
@@ -676,6 +678,7 @@ static Bool create_data_list(void)
 			else
 				return FALSE;
 		}
+					
 		flash_init_success_flag = 1;
 		return TRUE;
 	}
@@ -1087,8 +1090,10 @@ df_status_t data_flash_erase_block(U32 address, df_block_size_t block_size)
 		erase_commond = BLOCK_ERASE_4KB;
 	else if (block_size == DF_BLOCK_32KB)
 		erase_commond = BLOCK_ERASE_32KB;
-	else /* (block_size == DF_BLOCK_64KB) */
+	else if(block_size == DF_BLOCK_64KB)
 		erase_commond = BLOCK_ERASE_64KB;
+	else/*(block_size == DF_BLOCK_ALL)*/
+		erase_commond = CHIP_ERASE;
 
 	status = send_flash_command(READ_STATUS_REG, 0, NULL, 0);
 	if ((status & STATUS_BUSY) != 0)
@@ -1180,7 +1185,7 @@ df_status_t data_flash_write(U8 *data_ptr, U32 address, U16 data_length)
 		}
 		if(i < secremain)//需要擦除
 		{
-			return_code = data_flash_erase_block(secpos, DF_BLOCK_4KB);//擦除这个扇区
+			return_code = data_flash_erase_block(secpos*4096, DF_BLOCK_4KB);//擦除这个扇区
 			for(i=0; i<secremain; i++)	   //复制
 			{
 				FLASH_BUF[i+secoff]=data_ptr[i];

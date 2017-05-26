@@ -97,7 +97,8 @@ typedef enum
 {
 	DF_BLOCK_4KB = 1,
 	DF_BLOCK_32KB = 2,
-	DF_BLOCK_64KB = 3
+	DF_BLOCK_64KB = 3,
+	DF_BLOCK_ALL = 4,
 } df_block_size_t;
 
 #define spi_write_dummy()                   spi_write(spi, 0xFF)
@@ -129,10 +130,10 @@ typedef struct
 #define VOICE_DATA_START_ADDRESS 0x090000 
 
 
-#define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > (addr | 0x0000FF) ? TRUE : FALSE)
-//#define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > ((addr & 0x7FFF00)+DF_PAGE_SIZE) ? TRUE : FALSE)//huayi
-#define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0x7FFF00))
-//#define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0xFF))//huayi
+//#define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > (addr | 0x0000FF) ? TRUE : FALSE)
+#define BEYOND_PAGE_BOUNDARY(addr, size)    ((addr + size) > ((addr & 0x7FFF00)+DF_PAGE_SIZE) ? TRUE : FALSE)//huayi
+//#define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0x7FFF00))
+#define BYTES_TO_NEXT_PAGE_BOUNDARY(addr)   (DF_PAGE_SIZE - (addr & 0xFF))//huayi
 
 void data_flash_init(void);
 U16 send_flash_command(U16 command, U32 address, U8 *data_ptr, U16 length);
