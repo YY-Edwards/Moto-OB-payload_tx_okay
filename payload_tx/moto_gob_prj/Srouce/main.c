@@ -41,10 +41,10 @@ int main(void)
 		
 	INTC_init_interrupts();
 	
-	log_init();		
-	log("----start debug£¬ yoyo----");	
+	//log_init();		
+	//log("----start debug£¬ yoyo----");	
 	
-	data_flash_init();
+	//data_flash_init();
 		
 	//rtc_init();
 	

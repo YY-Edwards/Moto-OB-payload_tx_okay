@@ -148,13 +148,17 @@ void data_flash_init(void)
 
 	//test_data_flash(FALSE);
 	//create_data_flash_test_task();
+	//data_flash_erase_block(0x000000, DF_BLOCK_4KB);
 	create_data_list();
 	
 	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
 	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
-	save_voice_data(AMBE_AudioData, 600, TRUE);//1
-	save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
-	save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
+	status = save_voice_data(AMBE_AudioData, 600, TRUE);//1
+	status = save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
+	status = save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
+	if(status ==TRUE)
+	log("\r\n----save_voice_data£¬ okay!----\r\n");	
+	
 	//
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//4
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//5
@@ -164,8 +168,10 @@ void data_flash_init(void)
 	////save_voice_data(&AMBE_AudioData, 600, TRUE);//9
 	//
 	//playback_voice_data(3);
-	playback_voice_data(3);
-	playback_voice_data(20);
+	status = playback_voice_data(3);
+	status = playback_voice_data(20);
+	if(status ==TRUE)
+	log("\r\n----playback_voice_data£¬ okay!----\r\n");	
 	//playback_voice_data(5);
 	//playback_voice_data(4);
 
@@ -623,6 +629,7 @@ start:
 	{
 		if(memcmp(FlashLabel, str, sizeof(FlashLabel)-1) != 0)//compare label
 		{
+			ERASE:
 			//erase
 			for(i; i < (VOICE_LIST_BOUNDARY/(64*1024)); i++)//8*64k
 			{
@@ -641,7 +648,9 @@ start:
 			if(return_code != DF_WRITE_COMPLETED)
 			{
 				return FALSE;
-			}									
+			}
+			current_voice_index = 0;
+			log("\r\n----create voice info£¬ okay!----\r\n");								
 		}
 		else//success
 		{	
@@ -654,6 +663,7 @@ start:
 									
 					address = START_ADDRESS_OF_VOICE_INFO + ((current_voice_index -1)*VOICE_INFO_LENGTH);
 					return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
+					return_code = data_flash_read_block(LABEL_ADDRESS, 512, (U8 *)FLASH_BUF);
 					if(return_code == DF_OK)
 					{
 						VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
@@ -671,9 +681,14 @@ start:
 							}						
 						}
 						else
-							return FALSE;		
+						{
+							log("\r\n----voice storage is err!!!----\r\n");
+							goto ERASE;
+							//return FALSE;	
+						}
 					}
 				}
+				log("\r\n----read voice info£¬ okay!----\r\n");	
 			}
 			else
 				return FALSE;
