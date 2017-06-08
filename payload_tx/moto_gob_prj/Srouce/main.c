@@ -28,6 +28,9 @@ History:
 #include "fs/fs.h"
 #include "rtc/rtc.h"
 
+char debug_output[10]={"start"};
+U32 volatile test_data = 0x11123334;
+
 int main(void)
 {
 	//Force SSC_TX_DATA_ENABLE Disabled as soon as possible.
@@ -41,23 +44,25 @@ int main(void)
 	INTC_init_interrupts();
 	
 	log_init();		
-	log("----start debug----");	
+	log("debug_output: %s\n", debug_output);
+	log(": %x\n", test_data);
+	//log("----start debug，yoyo----");	
 		
 	//rtc_init();
 	
 	//fs_init();//65795机器无法通过文件系统初始化,究起原因，貌似是Radio对OB板的输出功率无法满足SD卡的正常工作。
 
-	tc_init();	
+	//tc_init();	
 			
 	xcmp_init();
+	
+	Enable_global_interrupt();
 	
 	app_init();
 		
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) == 0); //Wait for FS High.
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) != 0); //Wait for FS Low.
 	local_start_timer();
-	
-	Enable_global_interrupt();
 	
 	vTaskStartScheduler();		
 	return 0;

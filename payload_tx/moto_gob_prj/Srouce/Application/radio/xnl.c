@@ -235,6 +235,7 @@ void xnl_master_status_brdcst_func(xnl_fragment_t * xnl)
 	
 	/*send XNL message*/	
 	xnl_tx(&xnl_frame);
+	log("--1--\r\n");
 }
 
 
@@ -369,6 +370,7 @@ void xnl_device_auth_reply_func(xnl_fragment_t * xnl)
 	
 	/*send XNL message*/
 	xnl_tx(&xnl_frame);
+	//log("--2\r\n");
 }
 
 /**
@@ -421,9 +423,9 @@ void xnl_device_conn_reply_func(xnl_fragment_t * xnl)
 		/*connect finish*/
 		xnl_information.is_connected = TRUE;
 		
-		log("connected finish");
+		//log("connected finish");
 	}
-	
+	//log("--3\r\n");
 	//xcmp_audio_route_speaker();
 	
 }
@@ -744,6 +746,10 @@ Called By:task
 */
 static void xnl_rx_process(void * pvParameters)
 {
+	static  portTickType xLastWakeTime;
+	const portTickType xFrequency = 4000;//2s,定时问题已经修正。2s x  2000hz = 4000	
+	xLastWakeTime = xTaskGetTickCount();
+	
 	/*To ptr the elements in the queue*/
 	xnl_fragment_t * xnl_ptr;
 		
@@ -757,10 +763,12 @@ static void xnl_rx_process(void * pvParameters)
 			{
 				xnl_rx(xnl_ptr);
 				set_xnl_idle(xnl_ptr);
-				
+				//log("--xnl_rx_run\r\n");
 				//vPortFree(xnl_ptr);
 			}			
 		}
+		//log("--xnl_rx_run\r\n");	
+		//vTaskDelayUntil( &xLastWakeTime, 1000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
 		
 	}
 }
@@ -800,7 +808,9 @@ void xnl_init(void)
 	,  (const signed portCHAR *)"XNL_RX"
 	,  512
 	,  NULL
+	//,tskLOG_PRIORITY
 	,  tskXNL_PRIORITY //+ 1
+	//,1
 	,  NULL
 	);
 	

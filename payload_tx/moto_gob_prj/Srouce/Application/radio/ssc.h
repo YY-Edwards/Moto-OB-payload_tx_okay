@@ -99,5 +99,6 @@ void ssc_init(void);
 
 void register_rx_tx_func(void (*rx_exec)(void *),  void ( *tx_exec)(void *));
 
+void my_init_interrupts(void);
 
 #endif /* SSC_H_ */

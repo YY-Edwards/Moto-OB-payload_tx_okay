@@ -63,6 +63,8 @@ static U8 AMBE_Per_Burst_Flag = 0;
 
 volatile xQueueHandle test_tx = NULL;
 extern U32 tc_tick;
+extern char debug_output[];
+extern U32 volatile test_data;
 /**
 Function: phy_init
 Description: initialize the SSC;
@@ -204,6 +206,7 @@ void phy_rx(phy_fragment_t * phy_ptr)
 			//{
 				//taskYIELD();
 			//}
+			//log("--send,xnl_rx_run\r\n");
 			res = TRUE;
 		}	
 
@@ -316,7 +319,10 @@ static void phy_xnl_tx(xnl_channel_t * xnl_tx_channel)
 				, &phy_ptr
 				, &xHigherPriorityTaskWoken 
 			))
-			{								
+			{	
+				//memcpy(debug_output, "xnlsend", 7);
+				//test_data = phy_ptr->xnl_fragment.phy_header.phy_control;
+																
 				phy_tx_expexted_length = 
 				     phy_ptr->xnl_fragment.phy_header.phy_control & 0x000000FF;
 				
@@ -379,7 +385,8 @@ static void phy_xnl_tx(xnl_channel_t * xnl_tx_channel)
 			
 			/*Go back to waiting.*/	
 			//vPortFree(phy_ptr);		
-			phy_tx_state = WAITING_FOR_PHY_TX;		
+			phy_tx_state = WAITING_FOR_PHY_TX;			
+				
 			break;
 			/*This fragment finished.*/
 			
@@ -396,6 +403,8 @@ Calls:
     phy_rx
 Called By: phy_rx_func
 */
+
+
 static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 {
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
@@ -411,8 +420,14 @@ static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 
 	U32 phy_dword = xnl_rx_channel->dword;	
 
-	phy_rx_count++;
-	
+	//phy_rx_count++;
+	//if(phy_rx_count == 30000){
+		//
+		//memcpy(debug_output, "xnlrec", 10);
+		//test_data = phy_dword;
+		//phy_rx_count = 0;
+	//}
+	//
 	/*This is the code for parsing the incoming physical message.*/
 	switch (phy_rx_state)
 	{
@@ -425,19 +440,23 @@ static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 
         /*Waiting for something. Most frequent visit.*/		
 		case WAITING_FOR_HEADER:
-		
 			/*Ignore Idles.*/
 			if (0xABCD5A5A == phy_dword)
-			{
+			{				
 				break;
 			}	
-
+			//if((phy_dword != 0xABCD5A5A) && (phy_dword != 0x00000000)){
+				//
+				//memcpy(debug_output, "xnlrec", 10);
+				//test_data = phy_dword;			
+			//}
 			/*Skip until Header.*/		
-			if (0xABCD != (phy_dword >> 16))
-			{			
+			//if (0xABCD0000 != (phy_dword >> 16))
+			if (0xABCD0000 != (phy_dword & 0xFFFF0000))
+			{	
 				break;
 			}
-		
+			
 			/*Length excluding CSUM.*/
 			phy_rx_expexted_length = (phy_dword & 0x000000FF) - 2;
 			
@@ -455,7 +474,6 @@ static void phy_xnl_rx(xnl_channel_t * xnl_rx_channel)
 			{
 				break;
 			}
-			//
 			//xQueueReceiveFromISR(phy_store_idle, &phy_frame_ptr, &xHigherPriorityTaskWoken);
 			
 			//phy_frame_ptr = pvPortMalloc(sizeof(phy_fragment_t));
@@ -1618,8 +1636,16 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 						//0xABCDC010Ê±£¬_flagÎª1£»
 			
 	//payload_ptr_t *AMBE_payload_ptr;		
-				
 	
+	static U32  phy_rx_count = 0;
+	
+	phy_rx_count++;
+	if(phy_rx_count == 20000){
+		
+		//memcpy(debug_output, "payloadrec", 10);
+		//test_data = payload_rx_channel->dword[0];
+		//phy_rx_count = 0;
+	}
 	
 	if(is_first == FALSE)
 	{
@@ -1635,7 +1661,7 @@ static void phy_payload_rx(payload_channel_t * payload_rx_channel)
 
 			
 			if (payload_rx_channel->dword[0] == 0xABCD5A5A)//Ignore Idles.
-			{
+			{				
 				m_RxBurstType = VOICE_WATING;
 				//Upon receiving the idle frame, the m Rx Burst Type into an idle state in order to transmit the synchronization wait
 				 break; 

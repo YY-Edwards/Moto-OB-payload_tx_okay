@@ -55,7 +55,9 @@ Srouce/Application/radio/ssc.d Srouce/Application/radio/ssc.o \
  ../Srouce/ASF/common/utils/interrupt/interrupt_avr32.h \
  ../Srouce/ASF/avr32/utils/preprocessor/tpaste.h \
  ../Srouce/ASF/avr32/drivers/intc/intc.h \
- ../Srouce/Application/radio/ssc.h ../Srouce/Application/radio/ambe.h
+ ../Srouce/Application/radio/ssc.h ../Srouce/Application/radio/ambe.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h \
+ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h
 
 ../Srouce/Config/conf_board.h:
 
@@ -170,3 +172,7 @@ d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bi
 ../Srouce/Application/radio/ssc.h:
 
 ../Srouce/Application/radio/ambe.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/string.h:
+
+d:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\../lib/gcc/avr32/4.4.7/../../../../avr32/include/sys/string.h:

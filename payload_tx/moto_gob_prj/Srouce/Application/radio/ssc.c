@@ -13,6 +13,7 @@ History:
 #include "conf_board.h"
 #include "ssc.h"
 #include "ambe.h"
+#include "string.h"
 
 volatile U32 intStartCount;
 volatile U32 intDuration;
@@ -28,7 +29,11 @@ Defines the interface function (callback function) is used to send/receive SSC
 data*/
 volatile void (*phy_rx_exec)(void *) = NULL;
 volatile void (*phy_tx_exec)(void *) = NULL;
+extern U32 volatile test_data;
+extern char debug_output[];
 
+
+long volatile slot[4];
 
 
 /**
@@ -39,10 +44,11 @@ Calls:
     void (*phy_rx_exec)(void *)--callback function for receive SSC data 
 Called By: interrupt
 */
+
 __attribute__((__interrupt__))
 static void pdca_int_handler(void)
 {
-    
+    static U32 rx_count = 0;
 	//intStartCount = Get_system_register(AVR32_COUNT);
 	
 	/*Toggle Index*/
@@ -62,14 +68,31 @@ static void pdca_int_handler(void)
     (&AVR32_PDCA.channel[PDCA_CHANNEL_SSCRX_EXAMPLE])->tcrr = 3;
     (&AVR32_PDCA.channel[PDCA_CHANNEL_SSCRX_EXAMPLE])->isr;
 	
+	
 	/*receive SSC data*/
     if(phy_rx_exec != NULL)phy_rx_exec((void *)&RxBuffer[BufferIndex]);
+	rx_count++;
+	if(RxBuffer[BufferIndex].xnl_channel.dword == 0xABCD4015){
+		////if(RxBuffer[BufferIndex].xnl_channel.dword > 0){
+		//slot[0] = RxBuffer[BufferIndex].reserved_channel.dword;
+		//slot[1] = RxBuffer[BufferIndex].xnl_channel.dword;
+		//slot[2] = RxBuffer[BufferIndex].payload_channel.dword[0];
+		//slot[3] = RxBuffer[BufferIndex].payload_channel.dword[1];		
+		//memcpy( (unsigned char *)slot,(unsigned char *) &RxBuffer[BufferIndex], 16);
+	}
 
     /*transmit SSC data*/
 
 	if(phy_tx_exec != NULL)phy_tx_exec((void *)&TxBuffer[BufferIndex]);//phy_tx_func, phy_rx_func
-
 	
+	//if(((TxBuffer[BufferIndex].xnl_channel.dword)) == 0xABCD400E){
+		//
+		//slot[0] = TxBuffer[BufferIndex].reserved_channel.dword;
+		//slot[1] = TxBuffer[BufferIndex].xnl_channel.dword;
+		//slot[2] = TxBuffer[BufferIndex].payload_channel.dword[0];
+		//slot[3] = TxBuffer[BufferIndex].payload_channel.dword[1];
+	//}
+	//
 	
 		///*****测试：payload通道上把payload-RX数据直接回发*******/
 		//TxBuffer[BufferIndex].payload_channel.dword[0] = RxBuffer[BufferIndex].payload_channel.dword[0];
@@ -234,6 +257,7 @@ void ssc_init(void)
     (&AVR32_SSC)->cr = AVR32_SSC_CR_RXEN_MASK | AVR32_SSC_CR_TXEN_MASK;
     (&AVR32_PDCA.channel[PDCA_CHANNEL_SSCRX_EXAMPLE])->ier = 
                                                             AVR32_PDCA_RCZ_MASK;
+	
 }/*End of ssc_init.*/
 
 /*

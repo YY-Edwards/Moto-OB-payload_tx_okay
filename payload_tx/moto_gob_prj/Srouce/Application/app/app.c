@@ -805,6 +805,14 @@ void app_init(void)
 
 extern  char AudioData[];
 extern U32 tc_tick;
+extern char debug_output[];
+extern U32 volatile test_data;
+extern U32 volatile test_data_1;
+extern U32 volatile test_data_2;
+extern U32 volatile test_data_3;
+
+
+extern long volatile slot[4];
 
 static __app_Thread_(app_cfg)
 {
@@ -815,10 +823,12 @@ static __app_Thread_(app_cfg)
 	U8 Burst_ID = 0;
 	
 	 xLastWakeTime = xTaskGetTickCount();
-		
+	 memcpy(debug_output, "apprun", 7);
+	 test_data = 0xBBAA1234;
+	
 	for(;;)
 	{
-		if (0x00000003 == (bunchofrandomstatusflags & 0x00000003))//确认连接成功了，再发送请求
+		if (0x00000001 == (bunchofrandomstatusflags & 0x00000003))//确认连接成功了，再发送请求
 		{	
 			//if((++coun) % 3 ==0)		
 			{
@@ -834,7 +844,7 @@ static __app_Thread_(app_cfg)
 				
 				if(isAudioRouting == 0)
 				{
-					xcmp_data_session();
+					//xcmp_data_session();
 					//xcmp_audio_route_mic();
 					//xcmp_button_config();
 					//xcmp_audio_route_speaker();
@@ -865,7 +875,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 2)
 				{
-					xcmp_data_session();
+					//xcmp_data_session();
 					//xcmp_exit_device_control_mode();
 					//xcmp_volume_control();
 					//xcmp_data_session();
@@ -941,7 +951,16 @@ static __app_Thread_(app_cfg)
 			
 		}
 		//vTaskDelay(300*2 / portTICK_RATE_MS);//延迟300ms
-		//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
+		//log("\n\r bunchofrandomstatusflags & 0x00000003: %d \n\r", (bunchofrandomstatusflags & 0x00000003));
+		if(test_data != 0x11123334){
+			
+			log("\ndebug_out: %s\n", debug_output);
+			log(": %x\n", test_data);
+		}
+		if (slot[1] == 0xABCD400E)
+		{
+			//log("Send SSI: %x\t%x\t%x\t%x\r\n",slot[0], slot[1],slot[2],slot[3]);
+		}
 		
 		vTaskDelayUntil( &xLastWakeTime, 1000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
 	}
