@@ -235,6 +235,7 @@ void xnl_master_status_brdcst_func(xnl_fragment_t * xnl)
 	
 	/*send XNL message*/	
 	xnl_tx(&xnl_frame);
+	//log("--1--\r\n");
 }
 
 
@@ -421,7 +422,7 @@ void xnl_device_conn_reply_func(xnl_fragment_t * xnl)
 		/*connect finish*/
 		xnl_information.is_connected = TRUE;
 		
-		log("connected finish");
+		//log("connected finish");
 	}
 	
 	//xcmp_audio_route_speaker();
@@ -782,8 +783,8 @@ Called By:xcmp_init -- xcmp.c
 */
 void xnl_init(void)
 {
-	/*initialize the physical layer*/
-	phy_init();
+	///*initialize the physical layer*/
+	//phy_init();
 	
 	xnl_information.is_connected = FALSE;
 
@@ -814,6 +815,7 @@ void xnl_init(void)
 	,  NULL
 	);
 	
+	phy_init();
 	/*send device_master_query to connect radio*/	
 	xnl_send_device_master_query();
 }

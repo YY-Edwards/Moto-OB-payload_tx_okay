@@ -752,7 +752,7 @@ static __app_Thread_(app_cfg)
 			{
 				
 				// xcmp_audio_route_speaker();
-				//xcmp_IdleTestTone();
+				xcmp_IdleTestTone();
 				
 				if (Terminator_Flag == 1)
 				{
@@ -765,7 +765,7 @@ static __app_Thread_(app_cfg)
 					//xcmp_data_session();
 					//xcmp_audio_route_mic();
 					//xcmp_button_config();
-					xcmp_audio_route_speaker();
+					//xcmp_audio_route_speaker();
 					//xcmp_enter_device_control_mode();//调换3个命令的顺序，则不会导致掉线。。。奇葩
 					//xcmp_unmute_speaker();
 					
@@ -884,7 +884,7 @@ static __app_Thread_(app_cfg)
 					//}
 				//
 				//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
-				log("\n\r un: %d \n\r", is_unmute);
+				//log("\n\r un: %d \n\r", is_unmute);
 				//log("\n\r S_flag: %d \n\r", Silent_flag);
 				//log("\n\r Tend_flag: %d \n\r", Terminator_Flag);
 			

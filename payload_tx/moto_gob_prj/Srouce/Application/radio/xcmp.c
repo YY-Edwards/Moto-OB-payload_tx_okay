@@ -259,7 +259,7 @@ Called By: main -- main.c
 void xcmp_init(void)
 {
 	/*initialize the xnl*/
-	xnl_init();
+	//xnl_init();
 	
 	/*register the xcmp function(callback function)*/
 	xnl_register_xcmp_func( xcmp_rx );
@@ -278,6 +278,10 @@ void xcmp_init(void)
 	,  tskXCMP_PRIORITY
 	,  NULL
 	);
+	
+	
+	xnl_init();
+	
 }
 
 /**

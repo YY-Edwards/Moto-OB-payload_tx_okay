@@ -133,7 +133,7 @@ to exclude the API function. */
 
 #define tskPHY_PRIORITY		(tskIDLE_PRIORITY + 3)
 #define tskXNL_PRIORITY		(tskIDLE_PRIORITY + 3)
-#define tskXCMP_PRIORITY	(tskIDLE_PRIORITY + 3)
-#define tskLOG_PRIORITY		(tskIDLE_PRIORITY + 2)
+#define tskXCMP_PRIORITY	(tskIDLE_PRIORITY + 2)
+#define tskLOG_PRIORITY		(tskIDLE_PRIORITY + 1)
 
 #endif /* FREERTOS_CONFIG_H */

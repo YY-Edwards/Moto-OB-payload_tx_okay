@@ -43,15 +43,15 @@ int main(void)
 	log_init();		
 	log("----start debug----");	
 		
-	rtc_init();
+	//rtc_init();
 	
-	fs_init();//65795机器无法通过文件系统初始化
+	//fs_init();//65795机器无法通过文件系统初始化
 
 	tc_init();	
-			
-	xcmp_init();
 	
 	app_init();
+			
+	xcmp_init();
 		
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) == 0); //Wait for FS High.
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) != 0); //Wait for FS Low.
