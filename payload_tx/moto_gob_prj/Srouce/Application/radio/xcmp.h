@@ -890,6 +890,124 @@ typedef struct
 
 
 
+
+//remote addr type
+/*Identifies the local radio, master or a device in the XCMP network as the intended receiver.
+ In this case the Remote Address Size will be 0 and no Remote Address field exists.*/
+#define Rmt_Addr_Local_Device 0x00  
+#define Rmt_Addr_Local_Device_Size 0x00 
+
+/*Identifies the radio by its subscriber ID.*/
+#define Rmt_Addr_MOTOTRBO_ID 0x01 
+#define Rmt_Addr_MOTOTRBO_ID_Size 0x03
+
+/*Identifies the radio by its IP Address on IPv4 type.*/
+#define Rmt_Addr_IPv4_Address 0x02
+#define Rmt_Addr_IPv4_Address_Size 0x04
+ 
+/*Identifies the radio by its MDC ID.*/
+#define Rmt_Addr_MDC_ID 0x05 
+#define Rmt_Addr_MDC_ID_Size 0x02
+
+/*Identifies the phone number(0-9, * ,# and P) of the call.*/ 
+#define Rmt_Addr_Phone_Number 0x07
+
+/*Identifies the radio by its QuikCall II (QCII) Tone Frequency*/
+#define Rmt_Addr_Quik_Call_II 0x0B  
+#define Rmt_Addr_Quik_Call_II_Size 0x04 
+
+/*Identifies the radio by its Select 5 address*/
+#define Rmt_Addr_Select_5_Address 0x0D  
+#define Rmt_Addr_Select_5_Address_Size 0x09 
+/*Identifies the access code/deaccess code which is requested during phone call operation*/
+#define Rmt_Addr_Access_Deaccess_Code 0x0E
+
+#define MAX_DATA_PAYLOAD_SIZE 1472
+
+#pragma pack(1)
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Address[14];
+}RemoteAddress_Generic_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned short Port;
+}RemoteAddress_LocalDevice_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned int Size : 8;
+	unsigned int Address : 24;
+	unsigned short Port;
+}RemoteAddress_MOTOTRBOID_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Address[4];
+	unsigned short Port;
+}RemoteAddress_IPv4Address_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Address[2];
+	unsigned short Port;
+}RemoteAddress_MDCID_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Reserved[5];
+	unsigned short Port;
+}RemoteAddress_PhoneNumber_t;
+
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Address[4];
+	unsigned short Port;
+}RemoteAddress_QuikCallII_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Address[9];
+	unsigned short Port;
+}RemoteAddress_Select5Address_t;
+
+typedef struct
+{
+	unsigned char Type;
+	unsigned char Size;
+	unsigned char Reserved[8];
+	unsigned short Port;
+}RemoteAddress_AccessDeaccessCode_t;
+
+typedef union{
+	RemoteAddress_Generic_t Generic;
+	RemoteAddress_LocalDevice_t LocalDevice;
+	RemoteAddress_MOTOTRBOID_t MOTOTRBOID;
+	RemoteAddress_IPv4Address_t IPv4Address;
+	RemoteAddress_MDCID_t MDCID;
+	RemoteAddress_PhoneNumber_t PhoneNumber;
+	RemoteAddress_QuikCallII_t QuikCallII;
+	RemoteAddress_Select5Address_t Select5Address;
+	RemoteAddress_AccessDeaccessCode_t AccessDeaccessCode;
+}RemoteAddress_t;
+
 /*
 
  Data Session

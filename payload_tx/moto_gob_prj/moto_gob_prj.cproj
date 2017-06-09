@@ -384,6 +384,12 @@
     <Compile Include="Srouce\Application\timers\timer.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Srouce\Application\voice\voice.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Srouce\Application\voice\voice.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Srouce\ASF\avr32\drivers\intc\intc.c">
       <SubType>compile</SubType>
     </Compile>
@@ -608,6 +614,7 @@
     <Folder Include="Srouce" />
     <Folder Include="Srouce\Application\app" />
     <Folder Include="Srouce\Application\flash" />
+    <Folder Include="Srouce\Application\voice" />
     <Folder Include="Srouce\Application\rtc" />
     <Folder Include="Srouce\Application\radio" />
     <Folder Include="Srouce\Application\fs" />

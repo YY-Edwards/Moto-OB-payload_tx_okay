@@ -35,6 +35,8 @@ LINKER_SCRIPT_DEP:=
 SUBDIRS :=  \
 ../Srouce \
 ../Srouce/Application/app \
+../Srouce/Application/flash \
+../Srouce/Application/voice \
 ../Srouce/Application/rtc \
 ../Srouce/Application/radio \
 ../Srouce/Application/fs \
@@ -76,6 +78,7 @@ SUBDIRS :=  \
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
 ../Srouce/Application/app/app.c \
+../Srouce/Application/flash/data_flash.c \
 ../Srouce/Application/fs/avr_spi_sd.c \
 ../Srouce/Application/fs/mal_sd.c \
 ../Srouce/Application/fs/fs.c \
@@ -90,6 +93,7 @@ C_SRCS +=  \
 ../Srouce/Application/radio/xnl.c \
 ../Srouce/Application/rtc/rtc.c \
 ../Srouce/Application/timers/timer.c \
+../Srouce/Application/voice/voice.c \
 ../Srouce/ASF/avr32/drivers/intc/intc.c \
 ../Srouce/ASF/avr32/drivers/pm/pm.c \
 ../Srouce/ASF/avr32/drivers/pm/pm_conf_clocks.c \
@@ -125,6 +129,7 @@ ASM_SRCS +=
 
 OBJS +=  \
 Srouce/Application/app/app.o \
+Srouce/Application/flash/data_flash.o \
 Srouce/Application/fs/avr_spi_sd.o \
 Srouce/Application/fs/mal_sd.o \
 Srouce/Application/fs/fs.o \
@@ -139,6 +144,7 @@ Srouce/Application/radio/xcmp.o \
 Srouce/Application/radio/xnl.o \
 Srouce/Application/rtc/rtc.o \
 Srouce/Application/timers/timer.o \
+Srouce/Application/voice/voice.o \
 Srouce/ASF/avr32/drivers/intc/intc.o \
 Srouce/ASF/avr32/drivers/pm/pm.o \
 Srouce/ASF/avr32/drivers/pm/pm_conf_clocks.o \
@@ -167,6 +173,7 @@ Srouce/ASF/common/boards/user_board/init.o
 
 OBJS_AS_ARGS +=  \
 Srouce/Application/app/app.o \
+Srouce/Application/flash/data_flash.o \
 Srouce/Application/fs/avr_spi_sd.o \
 Srouce/Application/fs/mal_sd.o \
 Srouce/Application/fs/fs.o \
@@ -181,6 +188,7 @@ Srouce/Application/radio/xcmp.o \
 Srouce/Application/radio/xnl.o \
 Srouce/Application/rtc/rtc.o \
 Srouce/Application/timers/timer.o \
+Srouce/Application/voice/voice.o \
 Srouce/ASF/avr32/drivers/intc/intc.o \
 Srouce/ASF/avr32/drivers/pm/pm.o \
 Srouce/ASF/avr32/drivers/pm/pm_conf_clocks.o \
@@ -209,6 +217,7 @@ Srouce/ASF/common/boards/user_board/init.o
 
 C_DEPS +=  \
 Srouce/Application/app/app.d \
+Srouce/Application/flash/data_flash.d \
 Srouce/Application/fs/avr_spi_sd.d \
 Srouce/Application/fs/mal_sd.d \
 Srouce/Application/fs/fs.d \
@@ -223,6 +232,7 @@ Srouce/Application/radio/xcmp.d \
 Srouce/Application/radio/xnl.d \
 Srouce/Application/rtc/rtc.d \
 Srouce/Application/timers/timer.d \
+Srouce/Application/voice/voice.d \
 Srouce/ASF/avr32/drivers/intc/intc.d \
 Srouce/ASF/avr32/drivers/pm/pm.d \
 Srouce/ASF/avr32/drivers/pm/pm_conf_clocks.d \
@@ -251,6 +261,7 @@ Srouce/ASF/common/boards/user_board/init.d
 
 C_DEPS_AS_ARGS +=  \
 Srouce/Application/app/app.d \
+Srouce/Application/flash/data_flash.d \
 Srouce/Application/fs/avr_spi_sd.d \
 Srouce/Application/fs/mal_sd.d \
 Srouce/Application/fs/fs.d \
@@ -265,6 +276,7 @@ Srouce/Application/radio/xcmp.d \
 Srouce/Application/radio/xnl.d \
 Srouce/Application/rtc/rtc.d \
 Srouce/Application/timers/timer.d \
+Srouce/Application/voice/voice.d \
 Srouce/ASF/avr32/drivers/intc/intc.d \
 Srouce/ASF/avr32/drivers/pm/pm.d \
 Srouce/ASF/avr32/drivers/pm/pm_conf_clocks.d \
@@ -381,7 +393,18 @@ LINKER_SCRIPT_DEP+=  \
 
 
 
+
+
+
+
 Srouce/Application/app/%.o: ../Srouce/Application/app/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR32/GNU C Compiler : 4.4.7
+	$(QUOTE)D:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\avr32-gcc.exe$(QUOTE)  -x c -DDEBUG -DFOSC0=12000000 -DBOARD=USER_BOARD  -I"C:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"D:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"../Srouce/ASF/avr32/drivers" -I"../Srouce/ASF/avr32/drivers/intc" -I"../Srouce/ASF/avr32/utils" -I"../Srouce/ASF/avr32/utils/preprocessor" -I"../Srouce/ASF/common" -I"../Srouce/ASF/common/boards" -I"../Srouce/ASF/common/boards/user_board" -I"../Srouce/ASF/common/utils" -I"../Srouce/Config" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/portable/gcc/avr32_uc3" -I"../Srouce/ASF/thirdparty/ff11a" -I"../Srouce/Application" -I"../src/ASF/avr32/drivers/pdca" -I"../src/ASF/avr32/drivers/gpio" -I"../src/ASF/common/boards/user_board" -I"../src/ASF/common/boards" -I"../src/ASF/avr32/utils/preprocessor" -I"../src/ASF/avr32/utils" -I"../src/ASF/common/utils" -I"../src/ASF/avr32/drivers/intc"  -O1 -fdata-sections -ffunction-sections -masm-addr-pseudos -g2 -Wall -mpart=uc3b0512 -c -std=gnu99 -fno-strict-aliasing -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -mrelax -mno-cond-exec-before-reload -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+Srouce/Application/flash/%.o: ../Srouce/Application/flash/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR32/GNU C Compiler : 4.4.7
 	$(QUOTE)D:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\avr32-gcc.exe$(QUOTE)  -x c -DDEBUG -DFOSC0=12000000 -DBOARD=USER_BOARD  -I"C:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"D:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"../Srouce/ASF/avr32/drivers" -I"../Srouce/ASF/avr32/drivers/intc" -I"../Srouce/ASF/avr32/utils" -I"../Srouce/ASF/avr32/utils/preprocessor" -I"../Srouce/ASF/common" -I"../Srouce/ASF/common/boards" -I"../Srouce/ASF/common/boards/user_board" -I"../Srouce/ASF/common/utils" -I"../Srouce/Config" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/portable/gcc/avr32_uc3" -I"../Srouce/ASF/thirdparty/ff11a" -I"../Srouce/Application" -I"../src/ASF/avr32/drivers/pdca" -I"../src/ASF/avr32/drivers/gpio" -I"../src/ASF/common/boards/user_board" -I"../src/ASF/common/boards" -I"../src/ASF/avr32/utils/preprocessor" -I"../src/ASF/avr32/utils" -I"../src/ASF/common/utils" -I"../src/ASF/avr32/drivers/intc"  -O1 -fdata-sections -ffunction-sections -masm-addr-pseudos -g2 -Wall -mpart=uc3b0512 -c -std=gnu99 -fno-strict-aliasing -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -mrelax -mno-cond-exec-before-reload -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
@@ -410,6 +433,13 @@ Srouce/Application/rtc/%.o: ../Srouce/Application/rtc/%.c
 	
 
 Srouce/Application/timers/%.o: ../Srouce/Application/timers/%.c
+	@echo Building file: $<
+	@echo Invoking: AVR32/GNU C Compiler : 4.4.7
+	$(QUOTE)D:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\avr32-gcc.exe$(QUOTE)  -x c -DDEBUG -DFOSC0=12000000 -DBOARD=USER_BOARD  -I"C:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"D:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"../Srouce/ASF/avr32/drivers" -I"../Srouce/ASF/avr32/drivers/intc" -I"../Srouce/ASF/avr32/utils" -I"../Srouce/ASF/avr32/utils/preprocessor" -I"../Srouce/ASF/common" -I"../Srouce/ASF/common/boards" -I"../Srouce/ASF/common/boards/user_board" -I"../Srouce/ASF/common/utils" -I"../Srouce/Config" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/portable/gcc/avr32_uc3" -I"../Srouce/ASF/thirdparty/ff11a" -I"../Srouce/Application" -I"../src/ASF/avr32/drivers/pdca" -I"../src/ASF/avr32/drivers/gpio" -I"../src/ASF/common/boards/user_board" -I"../src/ASF/common/boards" -I"../src/ASF/avr32/utils/preprocessor" -I"../src/ASF/avr32/utils" -I"../src/ASF/common/utils" -I"../src/ASF/avr32/drivers/intc"  -O1 -fdata-sections -ffunction-sections -masm-addr-pseudos -g2 -Wall -mpart=uc3b0512 -c -std=gnu99 -fno-strict-aliasing -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -mrelax -mno-cond-exec-before-reload -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+Srouce/Application/voice/%.o: ../Srouce/Application/voice/%.c
 	@echo Building file: $<
 	@echo Invoking: AVR32/GNU C Compiler : 4.4.7
 	$(QUOTE)D:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr32\avr32-gnu-toolchain\bin\avr32-gcc.exe$(QUOTE)  -x c -DDEBUG -DFOSC0=12000000 -DBOARD=USER_BOARD  -I"C:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"D:\Program Files (x86)\Atmel\Studio\7.0\packs\atmel\UC3B_DFP\1.0.29\include\AT32UC3B0512" -I"../Srouce/ASF/avr32/drivers" -I"../Srouce/ASF/avr32/drivers/intc" -I"../Srouce/ASF/avr32/utils" -I"../Srouce/ASF/avr32/utils/preprocessor" -I"../Srouce/ASF/common" -I"../Srouce/ASF/common/boards" -I"../Srouce/ASF/common/boards/user_board" -I"../Srouce/ASF/common/utils" -I"../Srouce/Config" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/include" -I"../Srouce/ASF/thirdparty/freertos/freertos-7.0.0/source/portable/gcc/avr32_uc3" -I"../Srouce/ASF/thirdparty/ff11a" -I"../Srouce/Application" -I"../src/ASF/avr32/drivers/pdca" -I"../src/ASF/avr32/drivers/gpio" -I"../src/ASF/common/boards/user_board" -I"../src/ASF/common/boards" -I"../src/ASF/avr32/utils/preprocessor" -I"../src/ASF/avr32/utils" -I"../src/ASF/common/utils" -I"../src/ASF/avr32/drivers/intc"  -O1 -fdata-sections -ffunction-sections -masm-addr-pseudos -g2 -Wall -mpart=uc3b0512 -c -std=gnu99 -fno-strict-aliasing -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -mrelax -mno-cond-exec-before-reload -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

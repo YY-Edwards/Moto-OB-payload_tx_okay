@@ -27,7 +27,7 @@ History:
 
 #include "fs/fs.h"
 #include "rtc/rtc.h"
-#include "flash/data_flash.h"
+#include "voice/voice.h"
 
 int main(void)
 {
@@ -48,7 +48,7 @@ int main(void)
 	
 	//fs_init();//65795机器无法通过文件系统初始化,究起原因，貌似是Radio对OB板的输出功率无法满足SD卡的正常工作。
 	
-	data_flash_init();
+	voc_init();
 
 	tc_init();	
 	
