@@ -27,6 +27,7 @@ History:
 
 #include "fs/fs.h"
 #include "rtc/rtc.h"
+#include "flash/data_flash.h"
 
 int main(void)
 {
@@ -43,15 +44,17 @@ int main(void)
 	log_init();		
 	log("----start debug----");	
 		
-	rtc_init();
+	//rtc_init();
 	
 	//fs_init();//65795机器无法通过文件系统初始化,究起原因，貌似是Radio对OB板的输出功率无法满足SD卡的正常工作。
+	
+	data_flash_init();
 
 	tc_init();	
-			
-	xcmp_init();
 	
 	app_init();
+	
+	xcmp_init();
 		
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) == 0); //Wait for FS High.
 	while ((AVR32_GPIO.port[1].pvr & 0x00000002) != 0); //Wait for FS Low.

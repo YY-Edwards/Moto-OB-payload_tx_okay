@@ -291,6 +291,12 @@
     <Compile Include="Srouce\Application\app\app.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Srouce\Application\flash\data_flash.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Srouce\Application\flash\data_flash.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Srouce\Application\fs\avr_spi_sd.c">
       <SubType>compile</SubType>
     </Compile>
@@ -601,6 +607,7 @@
   <ItemGroup>
     <Folder Include="Srouce" />
     <Folder Include="Srouce\Application\app" />
+    <Folder Include="Srouce\Application\flash" />
     <Folder Include="Srouce\Application\rtc" />
     <Folder Include="Srouce\Application\radio" />
     <Folder Include="Srouce\Application\fs" />

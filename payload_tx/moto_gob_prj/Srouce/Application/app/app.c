@@ -824,7 +824,7 @@ static __app_Thread_(app_cfg)
 			{
 				
 				// xcmp_audio_route_speaker();
-				//xcmp_IdleTestTone();
+				xcmp_IdleTestTone();
 				
 				//if (Terminator_Flag == 1)
 				//{
@@ -848,7 +848,7 @@ static __app_Thread_(app_cfg)
 				}
 				else if(isAudioRouting == 1)
 				{
-					xcmp_exit_device_control_mode();
+					//xcmp_exit_device_control_mode();
 					xcmp_audio_route_AMBE();
 					//xcmp_function_mic();
 					//xcmp_data_session();
@@ -943,7 +943,7 @@ static __app_Thread_(app_cfg)
 		//vTaskDelay(300*2 / portTICK_RATE_MS);//延迟300ms
 		//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
 		
-		vTaskDelayUntil( &xLastWakeTime, 1000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
+		vTaskDelayUntil( &xLastWakeTime, 2000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
 	}
 }
 
