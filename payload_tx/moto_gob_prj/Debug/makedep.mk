@@ -4,6 +4,8 @@
 
 Srouce\Application\app\app.c
 
+Srouce\Application\flash\data_flash.c
+
 Srouce\Application\fs\avr_spi_sd.c
 
 Srouce\Application\fs\mal_sd.c

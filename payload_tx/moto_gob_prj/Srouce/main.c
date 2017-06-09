@@ -27,6 +27,7 @@ History:
 
 #include "fs/fs.h"
 #include "rtc/rtc.h"
+#include "flash/data_flash.h"
 
 int main(void)
 {
@@ -46,6 +47,8 @@ int main(void)
 	//rtc_init();
 	
 	//fs_init();//65795机器无法通过文件系统初始化
+	
+	data_flash_init();
 
 	tc_init();	
 	
