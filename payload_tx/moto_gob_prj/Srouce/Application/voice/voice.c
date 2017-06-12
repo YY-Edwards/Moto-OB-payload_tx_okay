@@ -6,7 +6,7 @@
  */ 
 #include "voice.h"
 
-static Bool voice_list_info_init(void);
+static Bool voice_list_info_init(U8 *voice_count_ptr);
 
 volatile const char FlashLabel[] = { "MOTOREC"};
 static unsigned short current_voice_index = 0;
@@ -36,13 +36,15 @@ U8 TEMP_BUF[4096];
 *
 *--------------------------- DETAILED DESCRIPTION ------------------------------
 *
+*	input param: 2bytes
+*   
 *------------------------------- REVISIONS -------------------------------------
 * Date        Name      Prob#       Description
 * ----------  --------  ----------  --------------------------------------------
 * 20-Fri-17   Edwards    none        Initial draft
 *
 *******************************************************************************/
-static Bool voice_list_info_init(void)
+static Bool voice_list_info_init(U8 *voice_count_ptr)
 {
 	df_status_t return_code = DF_OK;
 	unsigned int i = 0;
@@ -123,6 +125,7 @@ static Bool voice_list_info_init(void)
 			return FALSE;
 		}
 		
+		memcpy(voice_count_ptr, &current_voice_index, sizeof(current_voice_index));
 		list_init_success_flag = 1;
 		return TRUE;
 	}
@@ -436,7 +439,7 @@ void voc_read_write_test(void)
 	
 }
 
-
+U8 Current_total_voice[2] = {0};
 void voc_init(void)
 {
 	data_flash_init();
@@ -445,7 +448,7 @@ void voc_init(void)
 	// then read address 0x00001002 every 5s and report to radio with failure
 	//test_data_flash(FALSE);
 	//create_data_flash_test_task();
-	voice_list_info_init();
+	voice_list_info_init(Current_total_voice);
 	
 	voc_read_write_test();
 
