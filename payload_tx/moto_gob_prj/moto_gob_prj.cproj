@@ -81,7 +81,7 @@
         <board id="board.user_board.uc3b" value="Add" config="" content-id="Atmel.ASF" />
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>com.atmel.avrdbg.tool.avrone</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
     <avrtoolinterface>JTAG</avrtoolinterface>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
@@ -105,7 +105,7 @@
       <ToolNumber>00000BEBCB4F</ToolNumber>
       <ToolName>AVR ONE!</ToolName>
     </com_atmel_avrdbg_tool_avrone>
-    <avrtoolserialnumber>00000BEBCB4F</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800025181</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x0</avrdeviceexpectedsignature>
     <avrtoolinterfaceclock>7500000</avrtoolinterfaceclock>
     <TriggerUpgrade>true</TriggerUpgrade>

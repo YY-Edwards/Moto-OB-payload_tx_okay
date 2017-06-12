@@ -14,8 +14,8 @@ static unsigned int	  current_save_voice_offset = VOICE_DATA_START_ADDRESS;
 static U8 list_init_success_flag = 0;
 
 extern char AMBE_AudioData[];
-//U8 FLASH_BUF[4096];
 
+U8 TEMP_BUF[4096];
 
 
 /*******************************************************************************
@@ -30,7 +30,7 @@ extern char AMBE_AudioData[];
 *
 *---------------------------------- PURPOSE ------------------------------------
 *
-* This function is called by data_flash_init() to create voice(AMBE+) storage list for data flash.
+* This function is called by voc_init() to create voice(AMBE+) storage list for data flash.
 *
 *---------------------------------- SYNOPSIS -----------------------------------
 *
@@ -92,7 +92,7 @@ static Bool voice_list_info_init(void)
 					
 					address = START_ADDRESS_OF_VOICE_INFO + ((current_voice_index -1)*VOICE_INFO_LENGTH);
 					return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
-					//return_code = data_flash_read_block(LABEL_ADDRESS, 512, (U8 *)FLASH_BUF);
+					return_code = data_flash_read_block(LABEL_ADDRESS, 512, (U8 *)TEMP_BUF);
 					if(return_code == DF_OK)
 					{
 						VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
@@ -136,7 +136,7 @@ Bool voc_read_info( unsigned int voice_index,  VoiceList_Info_t * voice)
 	if(!list_init_success_flag)return FALSE;
 		
 	/* check input parameter */
-	if (voice_index >= current_voice_index)
+	if (voice_index > current_voice_index)
 	{
 		return -1;
 	}
@@ -150,11 +150,9 @@ Bool voc_read_info( unsigned int voice_index,  VoiceList_Info_t * voice)
 	return_code = data_flash_read_block(address, VOICE_INFO_LENGTH, (U8 *)str);
 	if (return_code == DF_OK)
 	{
-		//VoiceList_Info_t *ptr = (VoiceList_Info_t *)str;
-		voice = (VoiceList_Info_t *)str;
-		//if(ptr->numb == voice_index)
-		if(voice->numb == voice_index)
+		if(((VoiceList_Info_t *)str)->numb == voice_index)
 		{
+			memcpy(voice, str, sizeof(VoiceList_Info_t));
 			return TRUE;
 			
 		}
@@ -200,7 +198,7 @@ Bool playback_voice_data(U32 voice_index)
 	if(!list_init_success_flag)return FALSE;
 	
 	/* check input parameter */
-	if (voice_index >= current_voice_index)
+	if (voice_index > current_voice_index)
 	{
 		return -1;
 	}
@@ -385,6 +383,58 @@ Bool voc_save_info(VoiceList_Info_t * voice)
 
 }
 
+VoiceList_Info_t voice_ptr;
+VoiceList_Info_t voice_temp;
+
+void voc_read_write_test(void)
+{
+	U16 status = 0xff;
+	
+	/**save**/
+	voc_save_data(AMBE_AudioData, 600, TRUE);
+	//save voice information
+	voc_save_info(&voice_ptr);
+	
+	voc_save_data(&AMBE_AudioData[600], 300, FALSE);
+	voc_save_data(&AMBE_AudioData[950], 500, TRUE);
+	memset(&voice_ptr, 0x00, sizeof(voice_ptr));
+	voice_ptr.Header.Header = 0xABCD5A5A;
+	//save voice information
+	voc_save_info(&voice_ptr);
+	
+	
+	voc_save_data(AMBE_AudioData, 1024, TRUE);
+	//save voice information
+	voc_save_info(&voice_ptr);
+	
+	
+	/**read**/
+	status = voc_read_info(1, &voice_temp);
+	if(status ==TRUE){
+		
+		playback_voice_data(1);
+		memset(&voice_temp, 0x00, sizeof(voice_temp));
+		
+	}
+	
+	status = voc_read_info(3, &voice_temp);
+	if(status ==TRUE){
+		
+		playback_voice_data(3);
+		memset(&voice_temp, 0x00, sizeof(voice_temp));
+		
+	}
+	
+	status = voc_read_info(20, &voice_temp);
+	if(status ==TRUE){
+			
+		playback_voice_data(20);
+		memset(&voice_temp, 0x00, sizeof(voice_temp));
+			
+	}
+	
+	
+}
 
 
 void voc_init(void)
@@ -397,29 +447,6 @@ void voc_init(void)
 	//create_data_flash_test_task();
 	voice_list_info_init();
 	
-	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
-	//data_flash_read_block(LABEL_ADDRESS, 512, FLASH_BUF);
-	//status =  save_voice_data(AMBE_AudioData, 600, TRUE);//1
-	//status =  save_voice_data(&AMBE_AudioData[600], 350, TRUE);//2
-	//status =  save_voice_data(&AMBE_AudioData[950], 500, TRUE);//3
-	//if(status ==TRUE)
-	//log("\r\n----save_voice_data， okay!----\r\n");
-	//
-	////save_voice_data(&AMBE_AudioData, 600, TRUE);//4
-	////save_voice_data(&AMBE_AudioData, 600, TRUE);//5
-	////save_voice_data(&AMBE_AudioData, 600, TRUE);//6
-	//save_voice_data(&AMBE_AudioData, 1024, TRUE);//4
-	//save_voice_data(&AMBE_AudioData, 1350, TRUE);//5
-	////save_voice_data(&AMBE_AudioData, 600, TRUE);//9
-	//
-	//playback_voice_data(3);
-	//status =  playback_voice_data(3);
-	//status =  playback_voice_data(20);
-	//if(status ==TRUE)
-	//log("\r\n----playback_voice_data， okay!----\r\n");
-	
-	//playback_voice_data(5);
-	//playback_voice_data(4);
-	
+	voc_read_write_test();
 
 }

@@ -941,7 +941,7 @@ static __app_Thread_(app_cfg)
 			
 		}
 		//vTaskDelay(300*2 / portTICK_RATE_MS);//延迟300ms
-		//log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
+		log("\n\r ulIdleCycleCount: %d \n\r", ulIdleCycleCount);
 		
 		vTaskDelayUntil( &xLastWakeTime, 2000*2 / portTICK_RATE_MS  );//精确的以1000ms为周期执行。
 	}

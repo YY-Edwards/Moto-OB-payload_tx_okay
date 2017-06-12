@@ -103,11 +103,12 @@ typedef struct
 
 
 void voc_init(void);
-
 Bool voc_read_info( unsigned int index,  VoiceList_Info_t * voice);
 Bool playback_voice_data(U32 voice_index);
 Bool voc_save_data(void *data_ptr, U16 data_len, U8 voice_end_flag);
 Bool voc_save_info(VoiceList_Info_t * voice);
+
+void voc_read_write_test(void);
 
 //void voc_get_new_index(Voice_t * voice);
 
