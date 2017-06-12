@@ -13,6 +13,22 @@
 #include "radio/xcmp.h"
 #include "rtc/rtc.h"
 
+/**
+
+label:			"MOTOREC"(7bytes)
+
+voice_numbers:	0x xxxx(2bytes)
+
+index_number(2bytes) + VoiceHeader_t(64bytes) + address(4bytes) + length(2bytes);
+index_number(2bytes) + VoiceHeader_t(64bytes) + address(4bytes) + length(2bytes);
+index_number(2bytes) + VoiceHeader_t(64bytes) + address(4bytes) + length(2bytes);
+...
+...
+index_number(2bytes) + VoiceHeader_t(64bytes) + address(4bytes) + length(2bytes);
+
+
+**/
+
 
 #define LABEL_ADDRESS				0x000000
 #define LABEL_LENGTH				0x07//7bytes:"MOTOREC"
